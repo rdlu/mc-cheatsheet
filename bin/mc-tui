@@ -823,7 +823,10 @@ end
 # --- previews (invoked by fzf as: mc-tui __preview <line>) ----------------------
 
 function preview_cmd
-    set -l tmpl (string replace -r '  +.*$' '' -- $argv[1] | string trim)
+    # the fzf line is "<template>\t<description>"; take the template, drop any
+    # leftover ANSI/padding, and look the row up for the full description.
+    set -l tmpl (string split -m1 \t -- $argv[1])[1]
+    set tmpl (string replace -ra '\x1b\[[0-9;]*m' '' -- $tmpl | string trim)
     catalog | awk -F'|' -v t="$tmpl" '$2 == t {
         printf "\033[1m%s\033[0m\n\n%s\n", $2, $3; exit
     }'
@@ -1080,15 +1083,18 @@ end
 
 function command_view --argument-names cat
     while true
+        # template and description are tab-separated: fzf strips the ANSI but
+        # keeps the tab, so the template comes back clean even when it's longer
+        # than the display column (e.g. the god-gear give commands).
         set -l out (catalog | \
-            awk -F'|' -v c="$cat" '$1 == c { printf "%-62s \033[2m%s\033[0m\n", $2, $3 }' | \
+            awk -F'|' -v c="$cat" '$1 == c { printf "%-62s\t\033[2m%s\033[0m\n", $2, $3 }' | \
             fzf --ansi --reverse --expect=ctrl-y,ctrl-r \
                 --header "$cat | enter: fill + action menu | ctrl-y fill + copy | ctrl-r fill + run | esc back" \
                 --prompt "$cat> " \
                 --preview "$SELF __preview {}" --preview-window 'bottom,4,wrap')
         test (count $out) -lt 2; and return
         set -l key $out[1]
-        set -l tmpl (string replace -r '  +.*$' '' -- $out[2] | string trim)
+        set -l tmpl (string trim -- (string split -m1 \t -- $out[2])[1])
         set -l cmd (fill $tmpl); or continue
         switch "$key"
             case ctrl-y
