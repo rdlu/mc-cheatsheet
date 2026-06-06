@@ -105,8 +105,10 @@ in an interactive picker:
   tab over the DevTools protocol — driven by
   [`scripts/follow-map.py`](https://github.com/rdlu/mc-cheatsheet/blob/main/scripts/follow-map.py)
   (needs `chromium` + `uv`; the script's Python deps are fetched on first
-  run). The refresh **interval** and starting **zoom** default to
-  `[settings]` (5 s and 2) — lower the interval for snappier tracking at
+  run). Run it with **no player** (`mise run follow`) and it lists who's
+  online, lets you pick, then asks the refresh interval (default from
+  `[settings]`). The **interval** and starting **zoom** live in
+  `[settings]` (10 s and 2) — lower the interval for snappier tracking at
   the cost of more reload flicker, or pass it per-run with
   `mc-tui follow <player> <seconds>`. Zoom with the scroll wheel and it
   sticks (the loop reads your current zoom back each tick). Close the
@@ -119,7 +121,7 @@ Subcommands reuse the saved settings outside the picker:
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
 | `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
-| `mise run follow <player> [secs]` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every N s (interval + zoom from `[settings]`; your live zoom is kept) |
+| `mise run follow [player] [secs]` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every N s. No player → pick from who's online and choose the interval; interval + zoom default to `[settings]` |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
 | `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 

@@ -23,7 +23,7 @@
 #   mc-tui run <cmd...>   one-shot command (scripts, backups)
 #   mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 #   mc-tui map [player]   open the world on chunkbase (centered on a player)
-#   mc-tui follow <player> [secs]   live map: chromium tab re-centered on a player
+#   mc-tui follow [player] [secs]   live map: chromium tab re-centered on a player
 #
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
@@ -547,7 +547,7 @@ function load_conf
     set -g PORT 25575
     set -g PASS ''
     set -g PLATFORM java_26_1 # chunkbase seed-map platform tag
-    set -g INTERVAL 5 # follow-map refresh seconds
+    set -g INTERVAL 10 # follow-map refresh seconds
     set -g ZOOM 2 # follow-map starting zoom
     test -r $CONF; or return 0
     while read -l line
@@ -696,17 +696,24 @@ function add_player --argument-names name
     mv $PLAYERS.tmp $PLAYERS
 end
 
-function fetch_players # parse `list` over RCON into the players file
+# currently-online player names, one per line (parsed from `list`)
+function online_players
     set -l out (rcon_exec list 2>&1 | string join ' ')
     set -l names (string match -r 'online:\s*(\S.*)$' -- $out)[2]
-    if test -z "$names"
-        echo "nobody online (or list failed): $out"
+    test -n "$names"; or return 1
+    string split ',' -- $names | string trim | string match -rv '^$'
+end
+
+function fetch_players # parse `list` over RCON into the players file
+    set -l names (online_players)
+    if test (count $names) -eq 0
+        echo 'nobody online (or list failed)'
         return 1
     end
-    for n in (string split ',' -- $names | string trim)
+    for n in $names
         add_player $n
     end
-    echo "saved: "(string split ',' -- $names | string trim | string join ', ')
+    echo "saved: "(string join ', ' -- $names)
 end
 
 function players_view
@@ -921,6 +928,29 @@ function settings_view
     end
 end
 
+# Interactive entry for `mc-tui follow` (no args): pick a connected player,
+# ask the refresh interval, then start the live map.
+function follow_interactive
+    set -l names (online_players)
+    if test (count $names) -eq 0
+        echo 'nobody is online right now (or the server is unreachable)'
+        pause
+        return 1
+    end
+    set -l who (printf '%s\n' $names | fzf --reverse --height 40% \
+        --prompt 'follow which player> ' \
+        --header (count $names)' online — pick one, esc to cancel')
+    test -n "$who"; or return 1
+    read -lP "update every how many seconds? [$INTERVAL]> " secs
+    test -n "$secs"; or set secs $INTERVAL
+    if not string match -rq '^[0-9]+(\.[0-9]+)?$' -- "$secs"
+        echo "not a number: $secs"
+        pause
+        return 1
+    end
+    follow_player $who $secs
+end
+
 # Live "follow map": open chunkbase in a Chromium window and re-center it on
 # the player's RCON position every few seconds (driven by scripts/follow-map.py
 # over the DevTools protocol — chunkbase only reads the view from the URL on
@@ -992,8 +1022,7 @@ function map_view
                 open_url (chunkbase_url $seed $loc[1] $loc[2] $loc[3])
                 pause
             case 'FOLLOW a player*'
-                set -l who (pick_player player); or continue
-                follow_player $who
+                follow_interactive
             case 'open at coordinates*'
                 read -lP 'x> ' x
                 read -lP 'z> ' z
@@ -1174,8 +1203,8 @@ end
 # mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
 # mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 # mc-tui map [player]            open the world on chunkbase (centered on player)
-# mc-tui follow <player> [secs]  live map: chromium tab re-centered every N s
-#                                (interval + zoom default to [settings])
+# mc-tui follow [player] [secs]  live map: chromium tab re-centered every N s
+#                                (no player: pick from who's online, ask interval)
 
 switch "$argv[1]"
     case console
@@ -1197,8 +1226,11 @@ switch "$argv[1]"
         end
     case follow
         load_conf
-        test -n "$argv[2]"; or _die 'usage: mc-tui follow <player> [interval-seconds]'
-        follow_player $argv[2] $argv[3]
+        if test -n "$argv[2]"
+            follow_player $argv[2] $argv[3]
+        else
+            follow_interactive
+        end
     case __loc # machine-readable "dim x z" for a player (for follow-map.py)
         load_conf
         player_loc $argv[2]
