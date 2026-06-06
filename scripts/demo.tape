@@ -49,9 +49,10 @@ Type "picareta" Sleep 1.8s
 Enter
 Sleep 1.3s
 
-# <count?> is optional — Enter skips it
+# <count?>: pick a common stack size (64 is highlighted) — or type one, esc skips
+Sleep 1.3s
 Enter
-Sleep 1s
+Sleep 1.2s
 
 # action menu shows the finished command (give Steve <pickaxe>) with the
 # copy / run-over-RCON options
