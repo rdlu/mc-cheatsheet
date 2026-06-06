@@ -23,16 +23,16 @@ without the leading `/`).
 
 ## PDF downloads
 
-Single-page landscape cheatsheet (A4, Catppuccin — **Latte** for print,
+Two-page landscape cheatsheet (A4, Catppuccin — **Latte** for print,
 **Mocha** for screens), built from `cheatsheet.typ` with `mise run pdf`:
 
 <div class="pdf-grid">
   <div class="pdf-card commands wide">
-    <span class="pdf-title"><span class="pdf-icon">⛏️</span> Minecraft server commands</span>
-    <span class="pdf-sub">13 sections · selectors to RCON maintenance · vanilla 1.21.x</span>
+    <span class="pdf-title"><span class="pdf-icon">⛏️</span> Minecraft cheatsheet</span>
+    <span class="pdf-sub">page 1: server commands, selectors to RCON maintenance · page 2: survival tips · vanilla 1.21.x</span>
     <span class="pdf-links">
-      <a href="pdf/mc-commands-cheatsheet.pdf">Latte</a>
-      <a href="pdf/mc-commands-cheatsheet-mocha.pdf">Mocha</a>
+      <a href="pdf/mc-cheatsheet.pdf">Latte</a>
+      <a href="pdf/mc-cheatsheet-mocha.pdf">Mocha</a>
     </span>
   </div>
 </div>

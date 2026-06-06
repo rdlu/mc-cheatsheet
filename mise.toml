@@ -17,13 +17,13 @@ run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon"
 description = "Cheatsheet PDFs into docs/pdf/ — Catppuccin Latte (print) + Mocha (screens)"
 run = [
   "mkdir -p docs/pdf",
-  "typst compile --input theme=latte cheatsheet.typ docs/pdf/mc-commands-cheatsheet.pdf",
-  "typst compile --input theme=mocha cheatsheet.typ docs/pdf/mc-commands-cheatsheet-mocha.pdf",
+  "typst compile --input theme=latte cheatsheet.typ docs/pdf/mc-cheatsheet.pdf",
+  "typst compile --input theme=mocha cheatsheet.typ docs/pdf/mc-cheatsheet-mocha.pdf",
 ]
 sources = ["cheatsheet.typ"]
 outputs = [
-  "docs/pdf/mc-commands-cheatsheet.pdf",
-  "docs/pdf/mc-commands-cheatsheet-mocha.pdf",
+  "docs/pdf/mc-cheatsheet.pdf",
+  "docs/pdf/mc-cheatsheet-mocha.pdf",
 ]
 
 [tasks.watch]
@@ -32,7 +32,7 @@ run = '''
 theme=${THEME:-latte}
 suffix=$([ "$theme" = mocha ] && echo -mocha || true)
 mkdir -p docs/pdf
-typst watch --input theme=$theme cheatsheet.typ docs/pdf/mc-commands-cheatsheet$suffix.pdf
+typst watch --input theme=$theme cheatsheet.typ docs/pdf/mc-cheatsheet$suffix.pdf
 '''
 
 [tasks.site]

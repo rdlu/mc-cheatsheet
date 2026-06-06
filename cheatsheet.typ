@@ -1,8 +1,9 @@
-// Minecraft server command cheatsheet, themed with Catppuccin.
+// Minecraft cheatsheet — page 1: server commands, page 2: survival tips.
+// Themed with Catppuccin.
 //
-// Compile (see `just pdf`):
-//   typst compile --input theme=latte cheatsheet.typ docs/pdf/mc-commands-cheatsheet.pdf
-//   typst compile --input theme=mocha cheatsheet.typ docs/pdf/mc-commands-cheatsheet-mocha.pdf
+// Compile (see `mise run pdf`):
+//   typst compile --input theme=latte cheatsheet.typ docs/pdf/mc-cheatsheet.pdf
+//   typst compile --input theme=mocha cheatsheet.typ docs/pdf/mc-cheatsheet-mocha.pdf
 
 #let theme-id = sys.inputs.at("theme", default: "latte")
 
@@ -23,28 +24,41 @@
 )
 #let pal = themes.at(theme-id)
 
+// Per-page header: commands on page 1, tips on page 2.
+#let headers = (
+  ([Minecraft Server Commands],
+   [for RCON / server console — no leading `/` needed · vanilla 1.21.x]),
+  ([Minecraft Survival Tips],
+   [early game · farms · enchanting · nether · villagers]),
+)
 #set page(
   paper: "a4",
   flipped: true,
   margin: (x: 0.8cm, top: 1.2cm, bottom: 0.8cm),
   fill: pal.bg,
   columns: 3,
-  header: grid(
-    columns: (auto, 1fr),
-    align: (left + bottom, right + bottom),
-    text(size: 14pt, weight: "black", fill: pal.text,
-      [Minecraft Server Commands] + h(4pt) +
-      text(size: 9pt, weight: "regular", fill: pal.subtext, "cheatsheet")),
-    text(size: 7.5pt, fill: pal.subtext,
-      [for RCON / server console — no leading `/` needed · vanilla 1.21.x]),
-  ),
+  header: context {
+    let (title, sub) = headers.at(
+      calc.min(counter(page).get().first(), headers.len()) - 1)
+    grid(
+      columns: (auto, 1fr),
+      align: (left + bottom, right + bottom),
+      text(size: 14pt, weight: "black", fill: pal.text,
+        title + h(4pt) +
+        text(size: 9pt, weight: "regular", fill: pal.subtext, "cheatsheet")),
+      text(size: 7.5pt, fill: pal.subtext, sub),
+    )
+  },
   footer: align(center, text(size: 6.5pt, fill: pal.subtext,
-    [RodrigoDKi Craft Ops · generated #datetime.today().display()])),
+    [RodrigoDKi Craft Ops · generated #datetime.today().display() ·
+      page #context counter(page).display("1 / 1", both: true)])),
 )
 #set columns(gutter: 16pt)
 #set text(size: 7.2pt, font: "Inter", fill: pal.text)
 #set par(leading: 0.4em)
-#show raw: set text(font: "JetBrains Mono", size: 6.7pt, fill: pal.code)
+#set list(indent: 0pt, body-indent: 3pt, spacing: 3pt, marker: text(fill: pal.subtext, sym.bullet))
+#set enum(indent: 0pt, body-indent: 3pt, spacing: 3pt, numbering: n => text(fill: pal.subtext, weight: "bold", str(n) + "."))
+#show raw: set text(font: "JetBrains Mono", size: 0.93em, fill: pal.code)
 
 // Sections cycle through the Catppuccin accents.
 #let section-count = counter("section")
@@ -55,7 +69,7 @@
     let accent = pal.accents.at(calc.rem(i - 1, pal.accents.len()))
     block(
       fill: accent, width: 100%, radius: 2pt, inset: (x: 5pt, y: 3.2pt),
-      text(fill: pal.title-text, weight: "bold", size: 7.6pt, upper(title)),
+      text(fill: pal.title-text, weight: "bold", size: 1.06em, upper(title)),
     )
   }
   #body
@@ -71,6 +85,9 @@
 
 // one full-width row (for long commands)
 #let wide(body) = table.cell(colspan: 2, body)
+
+// prose body for the tips page (page 2)
+#let tips(body) = block(inset: (x: 3pt, y: 2pt), body)
 
 #section("Target selectors")[
   #cmds(
@@ -208,5 +225,147 @@
     [`save-off` / `save-on`], [pause autosave (do this around backups)],
     [`stop`], [graceful shutdown],
     [`help` / `help tp`], [list commands / usage of one],
+  )
+]
+
+// ──────────────────────────── page 2: survival tips ─────────────────────────
+// Prose needs fewer rows than command tables — scale up so the page fills.
+#pagebreak()
+#section-count.update(0)
+#set text(size: 8.4pt)
+#set list(spacing: 3.6pt)
+#set enum(spacing: 3.6pt)
+
+#section("Early game — day one")[
+  #tips[
+    + *Punch trees* (\~10 logs) → crafting table + wooden pickaxe
+    + 3 cobblestone → *stone pickaxe*, then stone axe/sword/shovel — skip
+      making more wooden tools
+    + *Cook your meat* — raw food is a trap; break tall grass for wheat seeds
+    + *Bed*: 3 wool + 3 planks — skips the night _and_ sets your respawn
+    + *Shelter*: dig into a hillside and plug the hole; a door beats an
+      ambitious half-finished house at sundown
+  ]
+]
+
+#section("First mining trip")[
+  #tips[
+    - *Staircase down* — never dig straight down (gravel, caves, lava)
+    - Bring food, torches, spare wood; a *water bucket* as soon as you have iron
+    - \~32 iron ore = full armor + tools, smelted with coal mined on the way
+    - Diamonds are best at *Y −58/−59* (1.18+); lava lakes start around Y −54 —
+      bring the water bucket before going that deep
+    - Torches *on the right wall* going in — right-hand rule leads home
+  ]
+]
+
+#section("Early essentials")[
+  #tips[
+    - Full iron armor + *shield* — blocks creeper blasts and skeleton arrows
+    - Crop farm: 9×9 plot, water in the center hydrates all of it
+    - Small cow/sheep pen — wheat lures them, breed pairs
+    - Sugar cane on a water edge → paper for bookshelves later
+    - A *bucket on the hotbar* saves you from lava, falls, and creepers
+    - Items despawn *5 min* after death — carry less until routes are safe
+  ]
+]
+
+#section("Farms, in order")[
+  #tips[
+    + *Crops* — wheat + carrots + potatoes; composter eats the excess → bone meal
+    + *Sugar cane* — only the bottom block must stay; observer-piston later
+    + *Bamboo/cactus* — grow unattended; bamboo doubles as furnace-XP afk fuel
+    + *Mob XP farm* — dark room or dungeon spawner, water stream to a
+      one-hit kill chamber
+    + *Iron farm* — 3+ villagers + beds + a zombie scare → golems; trivializes
+      hoppers, rails, buckets, anvils
+  ]
+]
+
+#section("Mob farm notes")[
+  #tips[
+    - Hostiles spawn at *light level 0* only (1.18+) — any light spawn-proofs
+    - Farms work when players are *24–128 blocks* from the spawning spaces
+    - `gamerule mobGriefing false` breaks creeper/wither-based designs
+  ]
+]
+
+#section("Enchanting setup")[
+  #tips[
+    - *15 bookshelves* (1-block gap around the table) unlock level-30 enchants —
+      3 leather + 9 paper each
+    - A level-30 enchant costs *3 levels + 3 lapis*, not 30 levels — enchant
+      early and often once past level 30
+    - Don't enchant or repair iron gear — it's disposable; save levels for diamond
+  ]
+]
+
+#section("Enchant priorities")[
+  #cmds(
+    [*Pickaxe*], [Efficiency, Unbreaking → Fortune III (or Silk Touch on a 2nd pick)],
+    [*Sword*], [Sharpness → Looting III, Sweeping Edge],
+    [*Armor*], [Protection IV → Feather Falling IV (boots), Respiration (helmet)],
+    [*Everything*], [*Mending* — from fishing, trading, or chest loot only],
+  )
+]
+
+#section("Anvil notes")[
+  #tips[
+    - Combining identical items merges enchants, but the *prior-work penalty
+      doubles* each combine — plan the tree, don't chain endlessly
+    - "Too expensive!" caps at *40 levels*
+    - A grindstone strips enchants and refunds a little XP
+    - Mending and Infinity are mutually exclusive on bows
+  ]
+]
+
+#section("Nether portals")[
+  #tips[
+    - 1 nether block = *8 overworld blocks* — build hub tunnels nether-side
+    - To link deliberately: overworld X/Z *÷ 8*, build the nether portal there;
+      portals link to the _nearest existing_ portal
+    - A frame needs only *10 obsidian* (corners optional) — a water bucket on a
+      lava lake casts one with no diamond pickaxe
+  ]
+]
+
+#section("Nether survival")[
+  #tips[
+    - *Fire Resistance potions* (nether wart + magma cream) make it casual
+    - Carry flint & steel — ghasts blow out portals
+    - Never sleep: *beds explode* in the nether (respawn anchors work)
+    - Wearing *any gold armor piece* keeps piglins neutral; hoglins fear
+      warped fungus
+  ]
+]
+
+#section("Fast travel")[
+  #tips[
+    - *Blue-ice boat highways*: \~40–70 blocks/s — 2-wide lane + slab roof
+      against ghasts
+    - Elytra + rockets is endgame travel; until then, nether hubs beat
+      overworld roads
+  ]
+]
+
+#section("Villagers")[
+  #tips[
+    - A villager needs a *bed* + a *job block* (lectern → librarian,
+      blast furnace → armorer, grindstone → weaponsmith)
+    - *Reroll librarians*: break/replace the lectern until the book you want
+      (e.g. Mending) appears — the trade locks once you trade
+    - Breed: *3 bread or 12 carrots/potatoes* per villager + spare beds
+    - *Cure* a zombified villager (weakness splash + golden apple) for
+      near-permanent massive discounts
+  ]
+]
+
+#section("Starter trades")[
+  #cmds(
+    [*Farmer*], [crops → emeralds (easy emerald engine)],
+    [*Fletcher*], [sticks → emeralds (cheapest trade in the game)],
+    [*Librarian*], [Mending, Efficiency, Protection books],
+    [*Smiths*], [diamond gear for emeralds],
+    [*Cleric*], [rotten flesh → emeralds; ender pearls],
   )
 ]

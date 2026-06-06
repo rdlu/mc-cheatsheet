@@ -1,9 +1,10 @@
 # RodrigoDKi Craft Ops
 
-Minecraft tips & server-management docs site, plus a single-page PDF
-cheatsheet of common server commands (teleport, give, gamerules,
+Minecraft tips & server-management docs site, plus a two-page PDF
+cheatsheet: common server commands (teleport, give, gamerules,
 moderation, …) aimed at use over RCON (`mcrcon -t`) or the server console —
-commands are written without the leading `/`. Targets vanilla **1.21.x**.
+written without the leading `/` — and survival tips (early game, farms,
+enchanting, nether, villagers). Targets vanilla **1.21.x**.
 
 - Markdown sources in `docs/`, built into `site/` by
   [Zensical](https://zensical.org) (via `uvx`, nothing installed)
