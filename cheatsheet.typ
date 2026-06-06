@@ -133,6 +133,18 @@
   )
 ]
 
+#section("Useful items to give")[
+  #cmds(
+    [*Gear sets*], [`netherite_`/`diamond_`/`iron_` + `sword` `pickaxe` `axe` `shovel` `hoe` `helmet` `chestplate` `leggings` `boots`],
+    [*Ranged*], [`bow` · `crossbow` · `arrow 64` · `trident` · `mace`],
+    [*Survival*], [`shield` · `totem_of_undying` · `golden_apple` · `enchanted_golden_apple` · `cooked_beef 64` · `golden_carrot 64`],
+    [*Mobility*], [`elytra` · `firework_rocket 64` · `ender_pearl 16` · `saddle`],
+    [*Utility*], [`water_bucket` · `lava_bucket` · `flint_and_steel` · `torch 64` · `name_tag` · `lead` · `recovery_compass` · `spyglass` · `experience_bottle 64`],
+    [*Storage*], [`shulker_box` · `ender_chest` · `bundle`],
+    wide[god pickaxe: `give @s netherite_pickaxe[enchantments={efficiency:5,fortune:3,unbreaking:3,mending:1}]`],
+  )
+]
+
 #section("Enchant · effects · XP")[
   #cmds(
     [`enchant @s sharpness 5`], [enchant held item],
