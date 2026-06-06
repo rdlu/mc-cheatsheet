@@ -12,6 +12,8 @@ commands for you and sends them over **RCON**. Targets vanilla **26.1**
 All commands are written **without the leading `/`**, the way the server
 console and RCON expect them — copy, paste, run.
 
+![mc-tui — browse a command, fill the blanks (searchable in English or pt-BR), copy or run over RCON](docs/img/mc-tui.gif)
+
 ---
 
 ## What's inside

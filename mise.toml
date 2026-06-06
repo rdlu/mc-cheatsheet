@@ -29,6 +29,10 @@ run = "bin/mc-tui session"
 description = "Live follow map: track a player on chunkbase — no args picks from who's online (mise run follow [player] [seconds])"
 run = "bin/mc-tui follow"
 
+[tasks.demo]
+description = "Record the mc-tui demo GIF into docs/img/ (needs vhs)"
+run = "mkdir -p docs/img && vhs scripts/demo.tape"
+
 [tasks.pdf]
 description = "Cheatsheet PDFs into docs/pdf/ — Catppuccin Latte (print) + Mocha (screens)"
 run = [
