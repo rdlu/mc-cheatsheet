@@ -10,8 +10,8 @@ typst = "latest"
 uv = "latest"
 
 [tasks.setup]
-description = "Install system deps: fonts, mcrcon + nmcrcon (AUR), fzf + wl-clipboard (for mc-tui)"
-run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon nmcrcon-git fzf wl-clipboard"
+description = "Install system deps: fonts, mcrcon + nmcrcon (AUR), fzf, wl-clipboard, chromium (for mc-tui)"
+run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon nmcrcon-git fzf wl-clipboard chromium"
 
 [tasks.tui]
 description = "mc-tui: browse the cheatsheet, fill placeholders, copy or run over RCON"
@@ -24,6 +24,10 @@ run = "bin/mc-tui console"
 [tasks.session]
 description = "Session 'craftops': mc-tui + RCON console — `mise run session zellij` to pick the muxer (default tmux)"
 run = "bin/mc-tui session"
+
+[tasks.follow]
+description = "Live follow map: open chunkbase and re-center on a player every 10s (mise run follow <player>)"
+run = "bin/mc-tui follow"
 
 [tasks.pdf]
 description = "Cheatsheet PDFs into docs/pdf/ — Catppuccin Latte (print) + Mocha (screens)"

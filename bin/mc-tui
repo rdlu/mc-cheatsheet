@@ -23,6 +23,7 @@
 #   mc-tui run <cmd...>   one-shot command (scripts, backups)
 #   mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 #   mc-tui map [player]   open the world on chunkbase (centered on a player)
+#   mc-tui follow <player>   live map: chromium tab re-centered on a player
 #
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
@@ -825,6 +826,7 @@ function preview_cat --argument-names cat
             echo 'open the world on chunkbase.com/apps/seed-map'
             echo '- reads the seed over RCON'
             echo '- centers on spawn, given coords, or a live player position'
+            echo '- FOLLOW: a Chromium window that tracks a player every 10s'
             echo '- needs the version tag (platform) from [settings]'
         case '[settings]'
             load_conf
@@ -882,6 +884,39 @@ function settings_view
     end
 end
 
+# Live "follow map": open chunkbase in a Chromium window and re-center it on
+# the player's RCON position every few seconds (driven by scripts/follow-map.py
+# over the DevTools protocol — chunkbase only reads the view from the URL on
+# load, so each update reloads the tab).
+function follow_player --argument-names who
+    set -l root (path dirname -- (path dirname -- $SELF))
+    set -l script $root/scripts/follow-map.py
+    test -f $script; or begin
+        echo "follow-map.py not found at $script"
+        pause
+        return 1
+    end
+    type -q uv; or begin
+        echo 'uv is required for the live follow map (mise run setup)'
+        pause
+        return 1
+    end
+    type -q chromium; or begin
+        echo 'chromium is required for the live follow map'
+        pause
+        return 1
+    end
+    set -l seed (world_seed)
+    test -n "$seed"; or begin
+        echo 'could not read the world seed over RCON'
+        pause
+        return 1
+    end
+    echo "following $who on chunkbase — close the window or press Ctrl-C to stop"
+    uv run --quiet $script --mc-tui $SELF --player $who \
+        --seed $seed --platform $PLATFORM --interval 10
+end
+
 function map_view
     load_conf
     set -l seed (world_seed)
@@ -894,6 +929,7 @@ function map_view
         set -l choice (printf '%s\n' \
                 'open at spawn (0, 0)' \
                 'center on a player (live position)' \
+                'FOLLOW a player (live map, auto-updates)' \
                 'open at coordinates…' \
                 'open the nether' \
                 'open the end' \
@@ -916,6 +952,9 @@ function map_view
                 echo "$who is at $loc[2] $loc[3] in the $loc[1]"
                 open_url (chunkbase_url $seed $loc[1] $loc[2] $loc[3])
                 pause
+            case 'FOLLOW a player*'
+                set -l who (pick_player player); or continue
+                follow_player $who
             case 'open at coordinates*'
                 read -lP 'x> ' x
                 read -lP 'z> ' z
@@ -1096,6 +1135,7 @@ end
 # mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
 # mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 # mc-tui map [player]            open the world on chunkbase (centered on player)
+# mc-tui follow <player>         live map: chromium tab re-centered every 10s
 
 switch "$argv[1]"
     case console
@@ -1115,6 +1155,16 @@ switch "$argv[1]"
         else
             open_url (chunkbase_url $seed overworld 0 0)
         end
+    case follow
+        load_conf
+        test -n "$argv[2]"; or _die 'usage: mc-tui follow <player>'
+        follow_player $argv[2]
+    case __loc # machine-readable "dim x z" for a player (for follow-map.py)
+        load_conf
+        player_loc $argv[2]
+    case __seed # machine-readable seed (for follow-map.py)
+        load_conf
+        world_seed
     case __dump # mc-tui __dump catalog|items|enchantments|... (for scripting)
         if functions -q data_$argv[2]
             data_$argv[2]

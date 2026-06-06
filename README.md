@@ -19,7 +19,10 @@ camelCase gamerules, `time query daytime`).
   commands, fill `<player>`/`<item>`/… placeholders from pickers, then
   copy to the clipboard or run over RCON (settings + saved player names
   in `~/.config/mc-tui/`). Also opens the world on chunkbase from the
-  live seed + player position (`[map]` / `mc-tui map [player]`)
+  live seed + player position (`[map]` / `mc-tui map [player]`), or a
+  **live follow map** that re-centers a Chromium tab on a player every
+  10s (`mc-tui follow <player>` / `mise run follow <player>`, via
+  `scripts/follow-map.py` over the DevTools protocol)
 - [Command builder](https://rdlu.github.io/mc-cheatsheet/builder/) — the
   same picker as a web page (phone-friendly, EN/pt-BR searchable, copy
   to paste in-game); its data is generated from the mc-tui tables by

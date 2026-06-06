@@ -98,6 +98,14 @@ in an interactive picker:
   `data get entity <player> Pos`). The version tag (e.g. `java_26_1`) is
   the `platform` field in `[settings]`. Headless/over SSH it copies the
   URL instead of launching a browser.
+- **`[map]` → FOLLOW** (or `mc-tui follow <player>`) is a **live map**:
+  it opens chunkbase in a dedicated Chromium window and re-centers it on
+  the player every 10s, so you can watch them move in real time. Chunkbase
+  only reads the view from the URL, so each update reloads the tab over the
+  DevTools protocol — driven by
+  [`scripts/follow-map.py`](https://github.com/rdlu/mc-cheatsheet/blob/main/scripts/follow-map.py)
+  (needs `chromium` + `uv`; the script's Python deps are fetched on first
+  run). Close the window or press ++ctrl+c++ to stop.
 
 Subcommands reuse the saved settings outside the picker:
 
@@ -106,6 +114,7 @@ Subcommands reuse the saved settings outside the picker:
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
 | `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
+| `mise run follow <player>` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every 10s |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
 | `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 
