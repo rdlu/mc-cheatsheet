@@ -10,8 +10,8 @@ typst = "latest"
 uv = "latest"
 
 [tasks.setup]
-description = "Install system deps: fonts, mcrcon (AUR), fzf + wl-clipboard (for mc-tui)"
-run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon fzf wl-clipboard"
+description = "Install system deps: fonts, mcrcon + nmcrcon (AUR), fzf + wl-clipboard (for mc-tui)"
+run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon nmcrcon-git fzf wl-clipboard"
 
 [tasks.tui]
 description = "mc-tui: browse the cheatsheet, fill placeholders, copy or run over RCON"

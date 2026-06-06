@@ -6,7 +6,8 @@
 #          clipboard or run them over RCON with mcrcon.
 #
 # Category view:  every command category, plus [console] (interactive
-#                 mcrcon -t), [players] (saved player names) and
+#                 session — nmcrcon if installed, else mcrcon -t),
+#                 [players] (saved player names) and
 #                 [settings] (RCON host / port / password).
 # Command view:   live preview, placeholders like <player> <item> <x>
 #                 are filled via pickers (players, items, enchantments,
@@ -568,10 +569,20 @@ function rcon_exec # one command (single argument)
     MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $argv[1]
 end
 
+# Interactive console: prefer nmcrcon (line editing, Ctrl-R history,
+# correct multi-packet responses) and fall back to mcrcon -t. One-shot
+# commands (rcon_exec) stay on mcrcon — nmcrcon has no one-shot mode yet.
 function rcon_term
     ensure_conf; or return 1
-    echo 'interactive RCON session — type commands, Q or Ctrl-D to quit'
-    MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -t
+    if type -q nmcrcon
+        echo 'interactive RCON (nmcrcon) — arrows + Ctrl-R history; exit or Ctrl-D to quit'
+        set -q NMCRCON_HISTORY; or set -lx NMCRCON_HISTORY $HOME/.local/state/nmcrcon-history
+        mkdir -p (path dirname -- $NMCRCON_HISTORY)
+        MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS nmcrcon
+    else
+        echo 'interactive RCON (mcrcon) — type commands, Q or Ctrl-D to quit'
+        MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -t
+    end
 end
 
 function clip --argument-names cmd
@@ -737,7 +748,12 @@ end
 function preview_cat --argument-names cat
     switch $cat
         case '[console]'
-            echo 'interactive mcrcon -t session using the saved settings'
+            if type -q nmcrcon
+                echo 'interactive nmcrcon session using the saved settings'
+                echo '(line editing, Ctrl-R history, multi-packet responses)'
+            else
+                echo 'interactive mcrcon -t session using the saved settings'
+            end
         case '[players]'
             echo 'saved player names — offered whenever a command needs a <player>'
             echo
@@ -857,7 +873,7 @@ function main
                     END { for (i = 1; i <= n; i++)
                         printf "%-18s \033[2m%d commands\033[0m\n", order[i], cnt[order[i]] }'
                 printf '%-18s \033[36m%s\033[0m\n' \
-                    '[console]' 'interactive mcrcon -t session' \
+                    '[console]' 'interactive RCON session (nmcrcon / mcrcon -t)' \
                     '[players]' 'saved names for <player> slots' \
                     '[settings]' 'RCON host / port / password'
             end | fzf --ansi --reverse \

@@ -51,6 +51,18 @@ One-shot commands (scriptable — each argument is a command):
 mcrcon "say Backup starting" save-off "save-all flush"
 ```
 
+!!! tip "nmcrcon for interactive sessions"
+    [`nmcrcon`](https://github.com/nicholascw/nmcrcon) (AUR:
+    `nmcrcon-git`) is a nicer interactive console: arrow keys, Ctrl-R
+    history search, persistent history, a masked password prompt, and —
+    unlike the unmaintained mcrcon 0.7.2 — it handles responses larger
+    than one packet (mcrcon's classic *"Invalid packet size"* crash on
+    long `help` or `data get` output). It reads the same `MCRCON_*`
+    environment variables. **Keep mcrcon for scripts**, though:
+    nmcrcon has no one-shot command mode yet, no silent mode, and
+    always exits 0. mc-tui does exactly this split — `[console]` opens
+    nmcrcon when installed, while run-command stays on mcrcon.
+
 ## mc-tui — the cheatsheet as a TUI
 
 [`bin/mc-tui`](https://github.com/rdlu/mc-cheatsheet/blob/main/bin/mc-tui)
@@ -77,7 +89,8 @@ in an interactive picker:
 - **`[players]`** keeps a name list for `<player>` slots — `ctrl-f`
   fetches whoever is online right now (via `list` over RCON), `ctrl-a`
   adds names manually.
-- **`[console]`** drops into a normal interactive `mcrcon -t` session.
+- **`[console]`** drops into an interactive session — `nmcrcon` when
+  installed (better line editing + history), else `mcrcon -t`.
 
 The command and item tables are plain pipe-delimited text — inspect them
 with `mc-tui __dump catalog` (or `items`, `enchantments`, `effects`, …)
