@@ -653,18 +653,27 @@ function world_seed
     echo $m[2]
 end
 
-# echoes "<dim> <x> <z>" for an online player, or fails
+# echoes "<dim> <x> <z>" for an online player, or fails.
+# Retries briefly: right after joining (or a dimension change) the player
+# entity isn't queryable yet — `data get` returns "No entity was found" for
+# a second or two before it settles.
 function player_loc --argument-names who
-    set -l pos (rcon_exec "data get entity $who Pos" 2>&1 | string join ' ')
-    set -l m (string match -r '\[\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d' -- $pos)
-    test (count $m) -ge 4; or return 1
-    set -l x (math -s0 "round($m[2])")
-    set -l z (math -s0 "round($m[4])")
-    set -l dimraw (rcon_exec "data get entity $who Dimension" 2>&1 | string join ' ')
-    set -l dim overworld
-    string match -q '*the_nether*' -- $dimraw; and set dim nether
-    string match -q '*the_end*' -- $dimraw; and set dim end
-    echo $dim $x $z
+    for attempt in 1 2 3
+        set -l pos (rcon_exec "data get entity $who Pos" 2>&1 | string join ' ')
+        set -l m (string match -r '\[\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d' -- $pos)
+        if test (count $m) -ge 4
+            set -l x (math -s0 "round($m[2])")
+            set -l z (math -s0 "round($m[4])")
+            set -l dimraw (rcon_exec "data get entity $who Dimension" 2>&1 | string join ' ')
+            set -l dim overworld
+            string match -q '*the_nether*' -- $dimraw; and set dim nether
+            string match -q '*the_end*' -- $dimraw; and set dim end
+            echo $dim $x $z
+            return 0
+        end
+        test "$attempt" -lt 3; and sleep 1
+    end
+    return 1
 end
 
 # --- players (~/.config/mc-tui/players) ---------------------------------------
@@ -945,7 +954,8 @@ function map_view
                 set -l who (pick_player player); or continue
                 set -l loc (player_loc $who)
                 if test (count $loc) -lt 3
-                    echo "couldn't read $who's position — are they online?"
+                    echo "couldn't read $who's position — offline, or still"
+                    echo "spawning in? (`list` shows who's on). Try again in a moment."
                     pause
                     continue
                 end
