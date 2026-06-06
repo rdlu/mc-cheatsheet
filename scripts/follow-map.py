@@ -125,9 +125,13 @@ async def run(args):
             sys.exit("follow-map: could not find the chunkbase tab")
 
         last = loc
-        async with websockets.connect(ws_url, max_size=None) as ws:
+        # ping_interval=None: Chrome's CDP endpoint doesn't answer WS keepalive
+        # pings, so the default keepalive would kill the idle connection during
+        # our sleeps. We don't need Page.enable either — Page.navigate works
+        # without it, and skipping it keeps the socket free of event spam.
+        async with websockets.connect(ws_url, max_size=None,
+                                      ping_interval=None) as ws:
             state = {"id": 0}
-            await cdp(ws, state, "Page.enable")
             print(f"following {args.player} — re-centering every {args.interval}s. "
                   "Close the window or press Ctrl-C to stop.")
             while proc.poll() is None:
@@ -144,7 +148,10 @@ async def run(args):
                 dim, x, z = loc
                 url = URL.format(seed=seed, platform=platform, dim=dim,
                                  x=x, z=z, zoom=zoom)
-                await cdp(ws, state, "Page.navigate", {"url": url})
+                try:
+                    await cdp(ws, state, "Page.navigate", {"url": url})
+                except websockets.ConnectionClosed:
+                    break  # window closed mid-tick
                 print(f"  → {DIM_LABEL.get(dim, dim)} {x}, {z}")
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
