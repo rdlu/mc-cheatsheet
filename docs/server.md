@@ -51,6 +51,39 @@ One-shot commands (scriptable — each argument is a command):
 mcrcon "say Backup starting" save-off "save-all flush"
 ```
 
+## mc-tui — the cheatsheet as a TUI
+
+[`bin/mc-tui`](https://github.com/rdlu/mc-cheatsheet/blob/main/bin/mc-tui)
+(fish + fzf, run it with `mise run tui`) wraps every command on this site
+in an interactive picker:
+
+- **Browse by category** — the same commands as the
+  [Commands](commands/selectors.md) pages, plus the full god-gear set.
+- **Placeholders are filled interactively** — `<player>` offers your saved
+  player names and selectors, `<item>` searches ~200 useful items
+  (gear, food, potions, enchanted books, redstone, …), `<enchantment>`,
+  `<effect>`, `<entity>`, `<structure>` and `<biome>` get their own pickers,
+  anything else is a quick prompt. Optional slots (like `<count?>`) can be
+  skipped with enter.
+- **Searchable in English *and* português (pt-BR)** — the item, enchantment,
+  effect, entity and biome pickers carry the official Brazilian Portuguese
+  names from the game's language file, so typing `picareta`, `fogueira` or
+  `remendo` finds the right id.
+- **Copy or run** — the finished command goes to the clipboard
+  (`wl-copy`/`xclip`) and/or straight to the server over RCON via `mcrcon`.
+- **`[settings]`** stores host / port / password in
+  `~/.config/mc-tui/rcon.conf` (`chmod 600` — remember,
+  [RCON is plaintext](#rcon-setup-serverproperties)).
+- **`[players]`** keeps a name list for `<player>` slots — `ctrl-f`
+  fetches whoever is online right now (via `list` over RCON), `ctrl-a`
+  adds names manually.
+- **`[console]`** drops into a normal interactive `mcrcon -t` session.
+
+The command and item tables are plain pipe-delimited text — inspect them
+with `mc-tui __dump catalog` (or `items`, `enchantments`, `effects`, …)
+and add your own rows in `~/.config/mc-tui/catalog.local` and
+`items.local` using the same `category|template|description` format.
+
 ## Backup flow
 
 Autosave **must** be paused while copying the world, or region files can be

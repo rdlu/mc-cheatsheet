@@ -13,6 +13,10 @@ enchanting, nether, villagers). Targets vanilla **1.21.x**.
   [Zensical](https://zensical.org) (via `uvx`, nothing installed)
 - PDF cheatsheet from `cheatsheet.typ` ([Typst](https://typst.app)),
   Catppuccin **Latte** (print) + **Mocha** (screens) variants in `docs/pdf/`
+- `bin/mc-tui` — the cheatsheet as an interactive fzf TUI: browse the
+  commands, fill `<player>`/`<item>`/… placeholders from pickers, then
+  copy to the clipboard or run over RCON (settings + saved player names
+  in `~/.config/mc-tui/`)
 - Tools and tasks managed with [mise](https://mise.jdx.dev)
 
 ## Build
@@ -26,6 +30,7 @@ mise run site     # full build: PDFs + HTML into site/
 mise run pdf      # just the cheatsheet PDFs into docs/pdf/
 mise run watch    # live-rebuild the PDF while editing (THEME=mocha for dark)
 mise run open     # build and open site/index.html
+mise run tui      # mc-tui: pick a command, fill it in, copy or run over RCON
 ```
 
 ## Notes
