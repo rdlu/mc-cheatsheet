@@ -26,7 +26,7 @@ description = "Session 'craftops': mc-tui + RCON console — `mise run session z
 run = "bin/mc-tui session"
 
 [tasks.follow]
-description = "Live follow map: open chunkbase and re-center on a player every 10s (mise run follow <player>)"
+description = "Live follow map: open chunkbase and track a player (mise run follow <player> [seconds])"
 run = "bin/mc-tui follow"
 
 [tasks.pdf]

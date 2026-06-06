@@ -100,15 +100,17 @@ in an interactive picker:
   URL instead of launching a browser.
 - **`[map]` → FOLLOW** (or `mc-tui follow <player>`) is a **live map**:
   it opens chunkbase in a dedicated Chromium window and re-centers it on
-  the player every 10s, so you can watch them move in real time. Chunkbase
-  only reads the view from the URL, so each update reloads the tab over the
-  DevTools protocol — driven by
+  the player every few seconds, so you can watch them move in real time.
+  Chunkbase only reads the view from the URL, so each update reloads the
+  tab over the DevTools protocol — driven by
   [`scripts/follow-map.py`](https://github.com/rdlu/mc-cheatsheet/blob/main/scripts/follow-map.py)
   (needs `chromium` + `uv`; the script's Python deps are fetched on first
-  run). Zoom with the scroll wheel and it sticks — the follow loop reads
-  your current zoom back from the page each tick instead of resetting it;
-  set a starting zoom with `mc-tui follow <player> <zoom>`. Close the window
-  or press ++ctrl+c++ to stop.
+  run). The refresh **interval** and starting **zoom** default to
+  `[settings]` (5 s and 2) — lower the interval for snappier tracking at
+  the cost of more reload flicker, or pass it per-run with
+  `mc-tui follow <player> <seconds>`. Zoom with the scroll wheel and it
+  sticks (the loop reads your current zoom back each tick). Close the
+  window or press ++ctrl+c++ to stop.
 
 Subcommands reuse the saved settings outside the picker:
 
@@ -117,7 +119,7 @@ Subcommands reuse the saved settings outside the picker:
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
 | `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
-| `mise run follow <player>` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every 10s (your zoom is kept; optional `<zoom>` arg sets the start) |
+| `mise run follow <player> [secs]` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every N s (interval + zoom from `[settings]`; your live zoom is kept) |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
 | `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 

@@ -23,7 +23,7 @@
 #   mc-tui run <cmd...>   one-shot command (scripts, backups)
 #   mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 #   mc-tui map [player]   open the world on chunkbase (centered on a player)
-#   mc-tui follow <player>   live map: chromium tab re-centered on a player
+#   mc-tui follow <player> [secs]   live map: chromium tab re-centered on a player
 #
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
@@ -547,6 +547,8 @@ function load_conf
     set -g PORT 25575
     set -g PASS ''
     set -g PLATFORM java_26_1 # chunkbase seed-map platform tag
+    set -g INTERVAL 5 # follow-map refresh seconds
+    set -g ZOOM 2 # follow-map starting zoom
     test -r $CONF; or return 0
     while read -l line
         set -l kv (string split -m1 '=' -- $line)
@@ -555,14 +557,16 @@ function load_conf
             case port; set -g PORT $kv[2]
             case pass; set -g PASS $kv[2]
             case platform; set -g PLATFORM $kv[2]
+            case interval; set -g INTERVAL $kv[2]
+            case zoom; set -g ZOOM $kv[2]
         end
     end <$CONF
 end
 
 function save_conf
     mkdir -p $CFGDIR
-    printf 'host=%s\nport=%s\npass=%s\nplatform=%s\n' \
-        "$HOST" "$PORT" "$PASS" "$PLATFORM" >$CONF
+    printf 'host=%s\nport=%s\npass=%s\nplatform=%s\ninterval=%s\nzoom=%s\n' \
+        "$HOST" "$PORT" "$PASS" "$PLATFORM" "$INTERVAL" "$ZOOM" >$CONF
     chmod 600 $CONF
 end
 
@@ -843,6 +847,8 @@ function preview_cat --argument-names cat
             echo "port      $PORT"
             echo 'pass      '(test -n "$PASS"; and echo '(set)'; or echo '(not set)')
             echo "platform  $PLATFORM"
+            echo "interval  $INTERVAL s (follow map)"
+            echo "zoom      $ZOOM (follow map start)"
             echo
             echo "config: $CONF"
         case '*'
@@ -862,6 +868,8 @@ function settings_view
                 "port      $PORT" \
                 "password  $masked" \
                 "platform  $PLATFORM" \
+                "follow interval  $INTERVAL s" \
+                "follow zoom      $ZOOM" \
                 'test connection (runs list)' \
                 back | fzf --reverse --height 50% --prompt 'settings> ' \
                 --header "RCON is plaintext — localhost / LAN / ssh tunnel only · saved to $CONF (600)")
@@ -884,6 +892,26 @@ function settings_view
                 read -lP "platform [$PLATFORM]> " v
                 test -n "$v"; and set -g PLATFORM $v
                 save_conf
+            case 'follow interval*'
+                echo 'seconds between follow-map updates (lower = more reload flicker)'
+                read -lP "interval [$INTERVAL]> " v
+                if string match -rq '^[0-9]+(\.[0-9]+)?$' -- "$v"
+                    set -g INTERVAL $v
+                    save_conf
+                else if test -n "$v"
+                    echo 'must be a number'
+                    pause
+                end
+            case 'follow zoom*'
+                echo 'chunkbase starting zoom (you can still scroll to change it live)'
+                read -lP "zoom [$ZOOM]> " v
+                if string match -rq '^[0-9]+(\.[0-9]+)?$' -- "$v"
+                    set -g ZOOM $v
+                    save_conf
+                else if test -n "$v"
+                    echo 'must be a number'
+                    pause
+                end
             case 'test*'
                 rcon_exec list
                 pause
@@ -897,7 +925,7 @@ end
 # the player's RCON position every few seconds (driven by scripts/follow-map.py
 # over the DevTools protocol — chunkbase only reads the view from the URL on
 # load, so each update reloads the tab).
-function follow_player --argument-names who zoom
+function follow_player --argument-names who interval
     set -l root (path dirname -- (path dirname -- $SELF))
     set -l script $root/scripts/follow-map.py
     test -f $script; or begin
@@ -921,11 +949,10 @@ function follow_player --argument-names who zoom
         pause
         return 1
     end
-    echo "following $who on chunkbase — close the window or press Ctrl-C to stop"
-    set -l zoomarg
-    test -n "$zoom"; and set zoomarg --zoom $zoom
+    test -n "$interval"; or set interval $INTERVAL
+    echo "following $who on chunkbase every "$interval"s — close the window or Ctrl-C to stop"
     uv run --quiet $script --mc-tui $SELF --player $who \
-        --seed $seed --platform $PLATFORM --interval 10 $zoomarg
+        --seed $seed --platform $PLATFORM --interval $interval --zoom $ZOOM
 end
 
 function map_view
@@ -1147,8 +1174,8 @@ end
 # mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
 # mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 # mc-tui map [player]            open the world on chunkbase (centered on player)
-# mc-tui follow <player> [zoom]  live map: chromium tab re-centered every 10s
-#                                (zoom you set in the page is preserved)
+# mc-tui follow <player> [secs]  live map: chromium tab re-centered every N s
+#                                (interval + zoom default to [settings])
 
 switch "$argv[1]"
     case console
@@ -1170,7 +1197,7 @@ switch "$argv[1]"
         end
     case follow
         load_conf
-        test -n "$argv[2]"; or _die 'usage: mc-tui follow <player> [zoom]'
+        test -n "$argv[2]"; or _die 'usage: mc-tui follow <player> [interval-seconds]'
         follow_player $argv[2] $argv[3]
     case __loc # machine-readable "dim x z" for a player (for follow-map.py)
         load_conf
