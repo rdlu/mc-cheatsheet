@@ -7,7 +7,9 @@ Minecraft tips & server-management docs site, plus a two-page PDF
 cheatsheet: common server commands (teleport, give, gamerules,
 moderation, …) aimed at use over RCON (`mcrcon -t`) or the server console —
 written without the leading `/` — and survival tips (early game, farms,
-enchanting, nether, villagers). Targets vanilla **1.21.x**.
+enchanting, nether, villagers). Targets vanilla **26.1** (verified against
+a live 26.1.2 server; pre-26 differences are footnoted where they matter —
+camelCase gamerules, `time query daytime`).
 
 - Markdown sources in `docs/`, built into `site/` by
   [Zensical](https://zensical.org) (via `uvx`, nothing installed)

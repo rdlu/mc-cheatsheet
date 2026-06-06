@@ -1,7 +1,8 @@
 # RodrigoDKi Craft Ops
 
-Minecraft tips and server management notes — vanilla **1.21.x**, run over
-RCON with [`mcrcon`](https://github.com/Tiiffi/mcrcon) (commands written
+Minecraft tips and server management notes — vanilla **26.1**
+(pre-26 differences footnoted), run over RCON with
+[`mcrcon`](https://github.com/Tiiffi/mcrcon) (commands written
 without the leading `/`).
 
 ## Contents
@@ -32,7 +33,7 @@ Two-page landscape cheatsheet (A4, Catppuccin — **Latte** for print,
 <div class="pdf-grid">
   <div class="pdf-card commands wide">
     <span class="pdf-title"><span class="pdf-icon">⛏️</span> Minecraft cheatsheet</span>
-    <span class="pdf-sub">page 1: server commands, selectors to RCON maintenance · page 2: survival tips · vanilla 1.21.x</span>
+    <span class="pdf-sub">page 1: server commands, selectors to RCON maintenance · page 2: survival tips · vanilla 26.1</span>
     <span class="pdf-links">
       <a href="pdf/mc-cheatsheet.pdf">Latte</a>
       <a href="pdf/mc-cheatsheet-mocha.pdf">Mocha</a>

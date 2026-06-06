@@ -27,7 +27,7 @@
 // Per-page header: commands on page 1, tips on page 2.
 #let headers = (
   ([Minecraft Server Commands],
-   [for RCON / server console — no leading `/` needed · vanilla 1.21.x]),
+   [for RCON / server console — no leading `/` needed · vanilla 26.1]),
   ([Minecraft Survival Tips],
    [early game · farms · enchanting · nether · villagers]),
 )
@@ -169,8 +169,8 @@
   #cmds(
     [`time set day`], [also: `noon`, `night`, `midnight`],
     [`time set 1000`], [ticks (24000 = full day)],
-    [`time add 1000`], [advance time],
-    [`time query daytime`], [current time of day],
+    [`time query time`], [current clock ticks],
+    [`time pause` / `time resume`], [freeze / unfreeze the clock],
     [`weather clear`], [also: `rain`, `thunder`],
     [`weather rain 600`], [duration in seconds],
   )
@@ -178,13 +178,14 @@
 
 #section("Useful gamerules")[
   #cmds(
-    [`gamerule keepInventory true`], [no item loss on death],
-    [`gamerule mobGriefing false`], [no creeper/enderman damage],
-    [`gamerule doDaylightCycle false`], [freeze time],
-    [`gamerule doWeatherCycle false`], [freeze weather],
-    [`gamerule doMobSpawning false`], [no hostile spawns],
-    [`gamerule playersSleepingPercentage 1`], [one sleeper skips night],
-    [`gamerule randomTickSpeed 3`], [crop growth speed (default 3)],
+    [`gamerule keep_inventory true`], [no item loss on death],
+    [`gamerule mob_griefing false`], [no creeper/enderman damage],
+    [`gamerule advance_time false`], [freeze time],
+    [`gamerule advance_weather false`], [freeze weather],
+    [`gamerule spawn_mobs false`], [no hostile spawns],
+    [`gamerule players_sleeping_percentage 1`], [one sleeper skips night],
+    [`gamerule random_tick_speed 3`], [crop growth speed (default 3)],
+    wide[pre-26 names were camelCase: `keepInventory`, `doDaylightCycle`, …],
   )
 ]
 
@@ -204,7 +205,7 @@
     [`summon lightning_bolt`], [smite current spot],
     [`kill @e[type=item]`], [clear dropped items (lag)],
     [`kill @e[type=zombie,distance=..20]`], [nearby zombies],
-    [`locate structure village`], [coords of nearest],
+    [`locate structure village_plains`], [coords of nearest],
     [`locate biome cherry_grove`], [nearest biome],
     [`seed`], [show world seed],
   )

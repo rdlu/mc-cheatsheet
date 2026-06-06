@@ -84,25 +84,28 @@ gamemode|gamemode adventure <player>|no block breaking
 gamemode|defaultgamemode survival|mode for new players
 gamemode|difficulty hard|also: peaceful, easy, normal
 gamemode|difficulty|query the current difficulty
-time & weather|time set day|morning (tick 1000) — also: noon, night, midnight
-time & weather|time set night|mob-farm o-clock (tick 13000)
+time & weather|time set day|time marker — also: noon, night, midnight
+time & weather|time set night|mob-farm o-clock
 time & weather|time set <ticks>|0–24000; 24000 = one full day
 time & weather|time add <ticks>|advance time
-time & weather|time query daytime|current time of day
+time & weather|time query time|current clock ticks (pre-26: time query daytime)
+time & weather|time pause|freeze the day-night cycle (26.1+)
+time & weather|time resume|let the clock run again (26.1+)
 time & weather|weather clear <seconds?>|sunshine
 time & weather|weather rain <seconds?>|rain
 time & weather|weather thunder <seconds?>|thunderstorm (charged creepers...)
-gamerules|gamerule keepInventory true|no item loss on death
-gamerules|gamerule keepInventory false|back to vanilla deaths
-gamerules|gamerule mobGriefing false|no creeper holes or enderman theft (breaks some farms)
-gamerules|gamerule doDaylightCycle false|freeze the time of day
-gamerules|gamerule doWeatherCycle false|freeze the weather
-gamerules|gamerule doMobSpawning false|no natural hostile spawns
-gamerules|gamerule doFireTick false|fire stops spreading
-gamerules|gamerule playersSleepingPercentage 1|one sleeper skips the night
-gamerules|gamerule randomTickSpeed <value>|crop growth speed — default 3
-gamerules|gamerule spawnRadius <value>|spread of world-spawn respawns
-gamerules|gamerule <rule> <value>|any other rule (gamerule alone lists them)
+gamerules|gamerule keep_inventory true|no item loss on death (pre-26: keepInventory)
+gamerules|gamerule keep_inventory false|back to vanilla deaths
+gamerules|gamerule mob_griefing false|no creeper holes or enderman theft (pre-26: mobGriefing)
+gamerules|gamerule advance_time false|freeze the time of day (pre-26: doDaylightCycle)
+gamerules|gamerule advance_weather false|freeze the weather (pre-26: doWeatherCycle)
+gamerules|gamerule spawn_mobs false|no natural hostile spawns (pre-26: doMobSpawning)
+gamerules|gamerule fire_spread_radius_around_player <value>|fire spread limiter (pre-26: doFireTick)
+gamerules|gamerule players_sleeping_percentage 1|one sleeper skips the night
+gamerules|gamerule random_tick_speed <value>|crop growth speed — default 3
+gamerules|gamerule respawn_radius <value>|spread of world-spawn respawns (pre-26: spawnRadius)
+gamerules|gamerule <rule>|query the current value
+gamerules|gamerule <rule> <value>|any other rule — 62 in 26.1 (help gamerule lists them)
 building|setblock <x> <y> <z> <block>|place one block
 building|fill <x> <y> <z> <x2> <y2> <z2> <block>|fill a region — max 32768 blocks
 building|fill <x> <y> <z> <x2> <y2> <z2> air|clear a region
@@ -114,6 +117,7 @@ world & entities|summon lightning_bolt <x> <y> <z>|smite a spot
 world & entities|kill @e[type=item]|clear dropped items (lag relief)
 world & entities|kill @e[type=<entity>,distance=..<radius>]|kill nearby mobs of one type
 world & entities|locate structure <structure>|coords of the nearest structure
+world & entities|execute in minecraft:the_nether run locate structure <structure>|nether structures — plain locate over RCON searches the overworld
 world & entities|locate biome <biome>|coords of the nearest biome
 world & entities|seed|show the world seed
 chat|list|who is online (great over RCON)
@@ -489,7 +493,12 @@ ender_dragon|Dragão Ender — boss — are you REALLY sure'
 end
 
 function data_structures
-    echo 'village|
+    echo '#minecraft:village|any village (tag)
+village_plains|
+village_desert|
+village_savanna|
+village_snowy|
+village_taiga|
 pillager_outpost|
 mineshaft|
 desert_pyramid|
@@ -502,12 +511,12 @@ shipwreck|
 buried_treasure|
 ruined_portal|
 ancient_city|deep dark
-trial_chambers|1.21
+trial_chambers|1.21+
 trail_ruins|
 stronghold|end portal
-fortress|nether fortress
-bastion_remnant|piglin loot
-end_city|elytra'
+fortress|nether — locate via execute in the_nether
+bastion_remnant|nether — piglin loot
+end_city|the end — elytra'
 end
 
 function data_biomes
