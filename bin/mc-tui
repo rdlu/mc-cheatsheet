@@ -21,7 +21,7 @@
 # Subcommands:
 #   mc-tui console        interactive RCON session with the saved settings
 #   mc-tui run <cmd...>   one-shot command (scripts, backups)
-#   mc-tui session        tmux/zellij: TUI + console side by side
+#   mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 #
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
@@ -900,12 +900,22 @@ function main
 end
 
 # --- terminal session: TUI + RCON console side by side ----------------------------
-# tmux (preferred): session "craftops", window 1 = mc-tui, window 2 = console.
-# Falls back to zellij with an equivalent two-tab layout.
+# `mc-tui session [tmux|zellij]` — session "craftops", one window/tab with
+# mc-tui, another with the RCON console. No argument: tmux if installed,
+# else zellij.
 
-function term_session
+function term_session --argument-names mux
     set -l s craftops
-    if type -q tmux
+    if test -z "$mux"
+        if type -q tmux
+            set mux tmux
+        else
+            set mux zellij
+        end
+    end
+    switch $mux
+    case tmux
+        type -q tmux; or _die 'tmux is not installed'
         if not tmux has-session -t $s 2>/dev/null
             tmux new-session -d -s $s -n tui $SELF
             tmux new-window -t $s -n rcon "$SELF console"
@@ -916,7 +926,9 @@ function term_session
         else
             tmux attach -t $s
         end
-    else if type -q zellij
+    case zellij
+        type -q zellij; or _die 'zellij is not installed'
+        set -q ZELLIJ; and _die 'already inside zellij — detach first (Ctrl-o d)'
         if zellij list-sessions -s 2>/dev/null | grep -qx $s
             zellij attach $s
         else
@@ -942,8 +954,8 @@ function term_session
 }' | string replace -a '@SELF@' $SELF >$layout
             zellij --session $s --new-session-with-layout $layout
         end
-    else
-        _die 'tmux or zellij required (or run mc-tui and mc-tui console separately)'
+    case '*'
+        _die "unknown multiplexer: $mux (use tmux or zellij)"
     end
 end
 
@@ -951,7 +963,7 @@ end
 # mc-tui              the TUI
 # mc-tui console      interactive RCON session (nmcrcon/mcrcon) with saved settings
 # mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
-# mc-tui session      tmux/zellij session: TUI + console side by side
+# mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
 
 switch "$argv[1]"
     case console
@@ -960,7 +972,7 @@ switch "$argv[1]"
         test (count $argv) -ge 2; or _die 'usage: mc-tui run <command...>'
         rcon_exec (string join ' ' -- $argv[2..])
     case session
-        term_session
+        term_session $argv[2]
     case __dump # mc-tui __dump catalog|items|enchantments|... (for scripting)
         if functions -q data_$argv[2]
             data_$argv[2]

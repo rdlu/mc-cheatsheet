@@ -22,7 +22,7 @@ description = "Interactive RCON console (nmcrcon, or mcrcon -t) using the saved 
 run = "bin/mc-tui console"
 
 [tasks.session]
-description = "tmux/zellij session 'craftops': mc-tui in one window, RCON console in the other"
+description = "Session 'craftops': mc-tui + RCON console — `mise run session zellij` to pick the muxer (default tmux)"
 run = "bin/mc-tui session"
 
 [tasks.pdf]

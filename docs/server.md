@@ -98,7 +98,8 @@ Subcommands reuse the saved settings outside the picker:
 | --- | --- |
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
-| `mise run session` (`mc-tui session`) | tmux (or zellij) session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
+| `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
+| `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 
 The command and item tables are plain pipe-delimited text — inspect them
 with `mc-tui __dump catalog` (or `items`, `enchantments`, `effects`, …)

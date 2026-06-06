@@ -36,7 +36,8 @@ mise run watch    # live-rebuild the PDF while editing (THEME=mocha for dark)
 mise run open     # build and open site/index.html
 mise run tui      # mc-tui: pick a command, fill it in, copy or run over RCON
 mise run console  # interactive RCON console (nmcrcon/mcrcon) with saved settings
-mise run session  # tmux/zellij session: mc-tui + RCON console side by side
+mise run session  # tmux session: mc-tui + RCON console side by side
+                  # (`mise run session zellij` for zellij instead)
 ```
 
 ## Notes
