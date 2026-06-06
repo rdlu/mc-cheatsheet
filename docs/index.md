@@ -6,6 +6,9 @@ without the leading `/`).
 
 ## Contents
 
+- **[Command builder](builder.md)** — interactive picker: choose a command,
+  fill in the blanks (items searchable in English or **pt-BR**), copy,
+  paste in-game — works on phones, great for sharing with friends
 - **[Commands](commands/selectors.md)** — the cheatsheet as browsable pages:
   [selectors & coordinates](commands/selectors.md),
   [teleporting](commands/teleport.md),

@@ -2,3 +2,4 @@
 site/
 docs/pdf/
 *.pdf
+docs/javascripts/builder-data.js

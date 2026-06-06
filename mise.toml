@@ -39,14 +39,20 @@ mkdir -p docs/pdf
 typst watch --input theme=$theme cheatsheet.typ docs/pdf/mc-cheatsheet$suffix.pdf
 '''
 
+[tasks.builder-data]
+description = "Generate the web command-builder data from the mc-tui tables"
+run = "python3 scripts/builder-data.py"
+sources = ["bin/mc-tui", "scripts/builder-data.py"]
+outputs = ["docs/javascripts/builder-data.js"]
+
 [tasks.site]
 description = "Build the HTML site into site/ (zensical via uvx; PDFs first — the site links them)"
-depends = ["pdf"]
+depends = ["pdf", "builder-data"]
 run = "uvx zensical build --clean"
 
 [tasks.serve]
 description = "Live-preview the docs site while editing (opens the browser once it's up)"
-depends = ["pdf"]
+depends = ["pdf", "builder-data"]
 run = '''
 (sleep 1 && xdg-open http://localhost:8000) &
 uvx zensical serve

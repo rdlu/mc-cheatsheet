@@ -84,6 +84,11 @@ with `mc-tui __dump catalog` (or `items`, `enchantments`, `effects`, …)
 and add your own rows in `~/.config/mc-tui/catalog.local` and
 `items.local` using the same `category|template|description` format.
 
+!!! tip "No terminal?"
+    The [Command builder](builder.md) is the same picker as a web page —
+    same catalog, same bilingual item search, copy-paste into the game
+    chat. Works on phones; share it with whoever plays on the server.
+
 ## Backup flow
 
 Autosave **must** be paused while copying the world, or region files can be

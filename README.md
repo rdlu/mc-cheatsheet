@@ -17,6 +17,10 @@ enchanting, nether, villagers). Targets vanilla **1.21.x**.
   commands, fill `<player>`/`<item>`/… placeholders from pickers, then
   copy to the clipboard or run over RCON (settings + saved player names
   in `~/.config/mc-tui/`)
+- [Command builder](https://rdlu.github.io/mc-cheatsheet/builder/) — the
+  same picker as a web page (phone-friendly, EN/pt-BR searchable, copy
+  to paste in-game); its data is generated from the mc-tui tables by
+  `scripts/builder-data.py` at build time
 - Tools and tasks managed with [mise](https://mise.jdx.dev)
 
 ## Build
