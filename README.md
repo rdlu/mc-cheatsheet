@@ -18,7 +18,8 @@ camelCase gamerules, `time query daytime`).
 - `bin/mc-tui` — the cheatsheet as an interactive fzf TUI: browse the
   commands, fill `<player>`/`<item>`/… placeholders from pickers, then
   copy to the clipboard or run over RCON (settings + saved player names
-  in `~/.config/mc-tui/`)
+  in `~/.config/mc-tui/`). Also opens the world on chunkbase from the
+  live seed + player position (`[map]` / `mc-tui map [player]`)
 - [Command builder](https://rdlu.github.io/mc-cheatsheet/builder/) — the
   same picker as a web page (phone-friendly, EN/pt-BR searchable, copy
   to paste in-game); its data is generated from the mc-tui tables by

@@ -22,6 +22,7 @@
 #   mc-tui console        interactive RCON session with the saved settings
 #   mc-tui run <cmd...>   one-shot command (scripts, backups)
 #   mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
+#   mc-tui map [player]   open the world on chunkbase (centered on a player)
 #
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
@@ -544,6 +545,7 @@ function load_conf
     set -g HOST localhost
     set -g PORT 25575
     set -g PASS ''
+    set -g PLATFORM java_26_1 # chunkbase seed-map platform tag
     test -r $CONF; or return 0
     while read -l line
         set -l kv (string split -m1 '=' -- $line)
@@ -551,13 +553,15 @@ function load_conf
             case host; set -g HOST $kv[2]
             case port; set -g PORT $kv[2]
             case pass; set -g PASS $kv[2]
+            case platform; set -g PLATFORM $kv[2]
         end
     end <$CONF
 end
 
 function save_conf
     mkdir -p $CFGDIR
-    printf 'host=%s\nport=%s\npass=%s\n' "$HOST" "$PORT" "$PASS" >$CONF
+    printf 'host=%s\nport=%s\npass=%s\nplatform=%s\n' \
+        "$HOST" "$PORT" "$PASS" "$PLATFORM" >$CONF
     chmod 600 $CONF
 end
 
@@ -615,6 +619,51 @@ end
 
 function pause
     read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+# --- chunkbase seed map -------------------------------------------------------
+# Open the world on chunkbase.com, optionally centered on a player's position.
+# The map needs the seed (fetched over RCON) and the version tag (PLATFORM in
+# [settings], e.g. java_26_1). Player coords come from `data get entity`.
+
+function chunkbase_url --argument-names seed dim x z
+    printf 'https://www.chunkbase.com/apps/seed-map#seed=%s&platform=%s&dimension=%s&x=%s&z=%s&zoom=0.5\n' \
+        $seed $PLATFORM $dim $x $z
+end
+
+function open_url --argument-names url
+    if set -q DISPLAY; or set -q WAYLAND_DISPLAY; and type -q xdg-open
+        echo "opening: $url"
+        xdg-open $url >/dev/null 2>&1 &
+        disown
+    else
+        # headless / over ssh — clipboard is the next best thing
+        clip $url
+    end
+end
+
+# world seed, cached for the session
+function world_seed
+    set -q SEED_CACHE; and test -n "$SEED_CACHE"; and echo $SEED_CACHE; and return
+    set -l out (rcon_exec seed 2>&1 | string join ' ')
+    set -l m (string match -r '\[(-?[0-9]+)\]' -- $out)
+    test (count $m) -ge 2; or return 1
+    set -g SEED_CACHE $m[2]
+    echo $m[2]
+end
+
+# echoes "<dim> <x> <z>" for an online player, or fails
+function player_loc --argument-names who
+    set -l pos (rcon_exec "data get entity $who Pos" 2>&1 | string join ' ')
+    set -l m (string match -r '\[\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d' -- $pos)
+    test (count $m) -ge 4; or return 1
+    set -l x (math -s0 "round($m[2])")
+    set -l z (math -s0 "round($m[4])")
+    set -l dimraw (rcon_exec "data get entity $who Dimension" 2>&1 | string join ' ')
+    set -l dim overworld
+    string match -q '*the_nether*' -- $dimraw; and set dim nether
+    string match -q '*the_end*' -- $dimraw; and set dim end
+    echo $dim $x $z
 end
 
 # --- players (~/.config/mc-tui/players) ---------------------------------------
@@ -772,11 +821,17 @@ function preview_cat --argument-names cat
             echo 'saved player names — offered whenever a command needs a <player>'
             echo
             saved_players
+        case '[map]'
+            echo 'open the world on chunkbase.com/apps/seed-map'
+            echo '- reads the seed over RCON'
+            echo '- centers on spawn, given coords, or a live player position'
+            echo '- needs the version tag (platform) from [settings]'
         case '[settings]'
             load_conf
-            echo "host  $HOST"
-            echo "port  $PORT"
-            echo 'pass  '(test -n "$PASS"; and echo '(set)'; or echo '(not set)')
+            echo "host      $HOST"
+            echo "port      $PORT"
+            echo 'pass      '(test -n "$PASS"; and echo '(set)'; or echo '(not set)')
+            echo "platform  $PLATFORM"
             echo
             echo "config: $CONF"
         case '*'
@@ -795,6 +850,7 @@ function settings_view
                 "host      $HOST" \
                 "port      $PORT" \
                 "password  $masked" \
+                "platform  $PLATFORM" \
                 'test connection (runs list)' \
                 back | fzf --reverse --height 50% --prompt 'settings> ' \
                 --header "RCON is plaintext — localhost / LAN / ssh tunnel only · saved to $CONF (600)")
@@ -812,9 +868,72 @@ function settings_view
                 echo
                 test -n "$v"; and set -g PASS $v
                 save_conf
+            case 'platform*'
+                echo 'chunkbase seed-map version tag, e.g. java_26_1, java_1_21, bedrock_1_21'
+                read -lP "platform [$PLATFORM]> " v
+                test -n "$v"; and set -g PLATFORM $v
+                save_conf
             case 'test*'
                 rcon_exec list
                 pause
+            case '*'
+                return
+        end
+    end
+end
+
+function map_view
+    load_conf
+    set -l seed (world_seed)
+    if test -z "$seed"
+        echo 'could not read the world seed over RCON — check [settings]'
+        pause
+        return
+    end
+    while true
+        set -l choice (printf '%s\n' \
+                'open at spawn (0, 0)' \
+                'center on a player (live position)' \
+                'open at coordinates…' \
+                'open the nether' \
+                'open the end' \
+                "copy seed ($seed)" \
+                "platform: $PLATFORM" \
+                back | fzf --reverse --height 55% --prompt 'map> ' \
+                --header "chunkbase seed map · seed $seed · $PLATFORM")
+        switch "$choice"
+            case 'open at spawn*'
+                open_url (chunkbase_url $seed overworld 0 0)
+                pause
+            case 'center on a player*'
+                set -l who (pick_player player); or continue
+                set -l loc (player_loc $who)
+                if test (count $loc) -lt 3
+                    echo "couldn't read $who's position — are they online?"
+                    pause
+                    continue
+                end
+                echo "$who is at $loc[2] $loc[3] in the $loc[1]"
+                open_url (chunkbase_url $seed $loc[1] $loc[2] $loc[3])
+                pause
+            case 'open at coordinates*'
+                read -lP 'x> ' x
+                read -lP 'z> ' z
+                test -n "$x" -a -n "$z"; or continue
+                open_url (chunkbase_url $seed overworld $x $z)
+                pause
+            case 'open the nether*'
+                open_url (chunkbase_url $seed nether 0 0)
+                pause
+            case 'open the end*'
+                open_url (chunkbase_url $seed end 0 0)
+                pause
+            case 'copy seed*'
+                clip $seed
+                pause
+            case 'platform:*'
+                read -lP "platform tag [$PLATFORM]> " v
+                test -n "$v"; and set -g PLATFORM $v; and save_conf
             case '*'
                 return
         end
@@ -888,6 +1007,7 @@ function main
                         printf "%-18s \033[2m%d commands\033[0m\n", order[i], cnt[order[i]] }'
                 printf '%-18s \033[36m%s\033[0m\n' \
                     '[console]' 'interactive RCON session (nmcrcon / mcrcon -t)' \
+                    '[map]' 'open the world on chunkbase (seed / player position)' \
                     '[players]' 'saved names for <player> slots' \
                     '[settings]' 'RCON host / port / password'
             end | fzf --ansi --reverse \
@@ -898,6 +1018,8 @@ function main
         switch $choice
             case '[console]'
                 rcon_term
+            case '[map]'
+                map_view
             case '[players]'
                 players_view
             case '[settings]'
@@ -973,6 +1095,7 @@ end
 # mc-tui console      interactive RCON session (nmcrcon/mcrcon) with saved settings
 # mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
 # mc-tui session [tmux|zellij]   TUI + console side by side (default: tmux)
+# mc-tui map [player]            open the world on chunkbase (centered on player)
 
 switch "$argv[1]"
     case console
@@ -982,6 +1105,16 @@ switch "$argv[1]"
         rcon_exec (string join ' ' -- $argv[2..])
     case session
         term_session $argv[2]
+    case map
+        load_conf
+        set seed (world_seed); or _die 'could not read the world seed over RCON'
+        if test -n "$argv[2]"
+            set loc (player_loc $argv[2])
+            test (count $loc) -ge 3; or _die "could not read $argv[2]'s position (online?)"
+            open_url (chunkbase_url $seed $loc[1] $loc[2] $loc[3])
+        else
+            open_url (chunkbase_url $seed overworld 0 0)
+        end
     case __dump # mc-tui __dump catalog|items|enchantments|... (for scripting)
         if functions -q data_$argv[2]
             data_$argv[2]

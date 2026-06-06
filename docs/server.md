@@ -91,6 +91,13 @@ in an interactive picker:
   adds names manually.
 - **`[console]`** drops into an interactive session — `nmcrcon` when
   installed (better line editing + history), else `mcrcon -t`.
+- **`[map]`** opens the world on
+  [chunkbase](https://www.chunkbase.com/apps/seed-map) — it reads the seed
+  over RCON and opens the seed map centered on spawn, on coordinates you
+  type, or on a **live player's position** (fetched with
+  `data get entity <player> Pos`). The version tag (e.g. `java_26_1`) is
+  the `platform` field in `[settings]`. Headless/over SSH it copies the
+  URL instead of launching a browser.
 
 Subcommands reuse the saved settings outside the picker:
 
@@ -98,6 +105,7 @@ Subcommands reuse the saved settings outside the picker:
 | --- | --- |
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
+| `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
 | `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 
