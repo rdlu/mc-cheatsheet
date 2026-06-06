@@ -5,10 +5,9 @@
 site_name = "RodrigoDKi Craft Ops"
 site_description = "Minecraft tips and server management — command cheatsheets, gameplay tips, and RCON server admin notes."
 site_author = "Rodrigo Dlugokenski"
-# Uncomment when publishing (e.g. GitHub Pages):
-# site_url = "https://rdlu.github.io/mc-cheatsheet/"
-# repo_url = "https://github.com/rdlu/mc-cheatsheet"
-# repo_name = "rdlu/mc-cheatsheet"
+site_url = "https://rdlu.github.io/mc-cheatsheet/"
+repo_url = "https://github.com/rdlu/mc-cheatsheet"
+repo_name = "rdlu/mc-cheatsheet"
 
 extra_css = ["stylesheets/extra.css"]
 extra_javascript = ["javascripts/accents.js"]
@@ -56,6 +55,10 @@ toggle.name = "Switch to light mode"
 [project.theme.font]
 text = "Inter"
 code = "JetBrains Mono"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/rdlu/mc-cheatsheet"
 
 [project.markdown_extensions.tables]
 [project.markdown_extensions.admonition]

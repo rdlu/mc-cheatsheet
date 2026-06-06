@@ -1,0 +1,29 @@
+# Build and deploy the docs site (HTML + PDF cheatsheet) to GitHub Pages.
+# Mirrors `mise run site` locally: typst PDFs -> zensical.
+name: Documentation
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v6
+      - uses: actions/checkout@v6
+      - name: Install cheatsheet fonts
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter fonts-jetbrains-mono
+      - uses: jdx/mise-action@v2
+      - run: mise run site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - uses: actions/deploy-pages@v5
+        id: deployment

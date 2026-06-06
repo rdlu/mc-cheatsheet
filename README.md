@@ -1,5 +1,8 @@
 # RodrigoDKi Craft Ops
 
+**Site: <https://rdlu.github.io/mc-cheatsheet/>** — rebuilt on every push by
+GitHub Actions (`.github/workflows/docs.yml`, same `mise run site` as local).
+
 Minecraft tips & server-management docs site, plus a two-page PDF
 cheatsheet: common server commands (teleport, give, gamerules,
 moderation, …) aimed at use over RCON (`mcrcon -t`) or the server console —
