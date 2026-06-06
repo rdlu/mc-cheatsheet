@@ -61,6 +61,11 @@ give @s elytra[enchantments={unbreaking:3,mending:1}]
 - Swap `fortune:3` for `silk_touch:1` on a second pickaxe.
 - Mending + Infinity don't combine on bows — pick one.
 - Mace enchants: `density:5` or `breach:4` (exclusive), plus `wind_burst:3`.
+- **Diamond instead of netherite?** Just swap the `netherite_` prefix for
+  `diamond_` — the enchantments are identical. Diamond is the early/mid-game
+  pick (no ancient-debris grind); netherite is actually *more* durable (e.g.
+  2031 vs 1561 uses on tools) and survives lava — but with Unbreaking III +
+  Mending, both effectively never wear out.
 
 ## Enchanting & effects
 

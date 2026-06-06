@@ -58,14 +58,22 @@ give & items|give @a <item> <count?>|give to every player online
 give & items|give <player> enchanted_book[stored_enchantments={<enchantment>:<level>}]|a specific enchanted book (1.20.5+)
 give & items|clear <player>|empty an entire inventory
 give & items|clear <player> <item>|remove one item type only
-god gear|give <player> netherite_sword[enchantments={sharpness:5,looting:3,sweeping_edge:3,fire_aspect:2,unbreaking:3,mending:1}]|god sword
-god gear|give <player> netherite_pickaxe[enchantments={efficiency:5,fortune:3,unbreaking:3,mending:1}]|god pickaxe — swap fortune:3 for silk_touch:1 on a 2nd pick
-god gear|give <player> netherite_axe[enchantments={efficiency:5,sharpness:5,unbreaking:3,mending:1}]|god axe
-god gear|give <player> netherite_shovel[enchantments={efficiency:5,silk_touch:1,unbreaking:3,mending:1}]|god shovel
-god gear|give <player> netherite_helmet[enchantments={protection:4,respiration:3,aqua_affinity:1,unbreaking:3,mending:1}]|god helmet
-god gear|give <player> netherite_chestplate[enchantments={protection:4,unbreaking:3,mending:1}]|god chestplate
-god gear|give <player> netherite_leggings[enchantments={protection:4,swift_sneak:3,unbreaking:3,mending:1}]|god leggings
-god gear|give <player> netherite_boots[enchantments={protection:4,feather_falling:4,depth_strider:3,soul_speed:3,unbreaking:3,mending:1}]|god boots
+god gear|give <player> netherite_sword[enchantments={sharpness:5,looting:3,sweeping_edge:3,fire_aspect:2,unbreaking:3,mending:1}]|god sword (netherite)
+god gear|give <player> netherite_pickaxe[enchantments={efficiency:5,fortune:3,unbreaking:3,mending:1}]|god pickaxe (netherite) — swap fortune:3 for silk_touch:1 on a 2nd pick
+god gear|give <player> netherite_axe[enchantments={efficiency:5,sharpness:5,unbreaking:3,mending:1}]|god axe (netherite)
+god gear|give <player> netherite_shovel[enchantments={efficiency:5,silk_touch:1,unbreaking:3,mending:1}]|god shovel (netherite)
+god gear|give <player> netherite_helmet[enchantments={protection:4,respiration:3,aqua_affinity:1,unbreaking:3,mending:1}]|god helmet (netherite)
+god gear|give <player> netherite_chestplate[enchantments={protection:4,unbreaking:3,mending:1}]|god chestplate (netherite)
+god gear|give <player> netherite_leggings[enchantments={protection:4,swift_sneak:3,unbreaking:3,mending:1}]|god leggings (netherite)
+god gear|give <player> netherite_boots[enchantments={protection:4,feather_falling:4,depth_strider:3,soul_speed:3,unbreaking:3,mending:1}]|god boots (netherite)
+god gear|give <player> diamond_sword[enchantments={sharpness:5,looting:3,sweeping_edge:3,fire_aspect:2,unbreaking:3,mending:1}]|god sword (diamond) — pre-netherite, same enchants
+god gear|give <player> diamond_pickaxe[enchantments={efficiency:5,fortune:3,unbreaking:3,mending:1}]|god pickaxe (diamond) — swap fortune:3 for silk_touch:1 on a 2nd pick
+god gear|give <player> diamond_axe[enchantments={efficiency:5,sharpness:5,unbreaking:3,mending:1}]|god axe (diamond)
+god gear|give <player> diamond_shovel[enchantments={efficiency:5,silk_touch:1,unbreaking:3,mending:1}]|god shovel (diamond)
+god gear|give <player> diamond_helmet[enchantments={protection:4,respiration:3,aqua_affinity:1,unbreaking:3,mending:1}]|god helmet (diamond)
+god gear|give <player> diamond_chestplate[enchantments={protection:4,unbreaking:3,mending:1}]|god chestplate (diamond)
+god gear|give <player> diamond_leggings[enchantments={protection:4,swift_sneak:3,unbreaking:3,mending:1}]|god leggings (diamond)
+god gear|give <player> diamond_boots[enchantments={protection:4,feather_falling:4,depth_strider:3,soul_speed:3,unbreaking:3,mending:1}]|god boots (diamond)
 god gear|give <player> bow[enchantments={power:5,infinity:1,flame:1,unbreaking:3}]|god bow — infinity excludes mending
 god gear|give <player> crossbow[enchantments={quick_charge:3,multishot:1,unbreaking:3,mending:1}]|god crossbow — multishot excludes piercing
 god gear|give <player> trident[enchantments={loyalty:3,channeling:1,impaling:5,unbreaking:3,mending:1}]|god trident — loyalty excludes riptide
