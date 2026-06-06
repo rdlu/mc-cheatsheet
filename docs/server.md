@@ -105,7 +105,10 @@ in an interactive picker:
   DevTools protocol — driven by
   [`scripts/follow-map.py`](https://github.com/rdlu/mc-cheatsheet/blob/main/scripts/follow-map.py)
   (needs `chromium` + `uv`; the script's Python deps are fetched on first
-  run). Close the window or press ++ctrl+c++ to stop.
+  run). Zoom with the scroll wheel and it sticks — the follow loop reads
+  your current zoom back from the page each tick instead of resetting it;
+  set a starting zoom with `mc-tui follow <player> <zoom>`. Close the window
+  or press ++ctrl+c++ to stop.
 
 Subcommands reuse the saved settings outside the picker:
 
@@ -114,7 +117,7 @@ Subcommands reuse the saved settings outside the picker:
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
 | `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
-| `mise run follow <player>` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every 10s |
+| `mise run follow <player>` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every 10s (your zoom is kept; optional `<zoom>` arg sets the start) |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
 | `mise run session zellij` | same, but in zellij (two tabs); no argument defaults to tmux |
 

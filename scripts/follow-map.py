@@ -20,6 +20,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -125,6 +126,7 @@ async def run(args):
             sys.exit("follow-map: could not find the chunkbase tab")
 
         last = loc
+        cur_zoom = zoom  # preserved across reloads (updated from the live page)
         # ping_interval=None: Chrome's CDP endpoint doesn't answer WS keepalive
         # pings, so the default keepalive would kill the idle connection during
         # our sleeps. We don't need Page.enable either — Page.navigate works
@@ -138,6 +140,19 @@ async def run(args):
                 await asyncio.sleep(args.interval)
                 if proc.poll() is not None:
                     break
+                # Chunkbase writes the live view (incl. zoom) into the URL hash
+                # as you scroll, so read it back and keep your chosen zoom.
+                try:
+                    href = (await cdp(ws, state, "Runtime.evaluate",
+                            {"expression": "location.href", "returnByValue": True})
+                            )["result"]["result"]["value"]
+                    m = re.search(r"[#&]zoom=([0-9.]+)", href or "")
+                    if m:
+                        cur_zoom = m.group(1)
+                except websockets.ConnectionClosed:
+                    break
+                except Exception:
+                    pass
                 loc = player_loc(args.mc_tui, args.player)
                 if loc is None:
                     print(f"  {args.player} offline — holding last position")
@@ -147,12 +162,12 @@ async def run(args):
                 last = loc
                 dim, x, z = loc
                 url = URL.format(seed=seed, platform=platform, dim=dim,
-                                 x=x, z=z, zoom=zoom)
+                                 x=x, z=z, zoom=cur_zoom)
                 try:
                     await cdp(ws, state, "Page.navigate", {"url": url})
                 except websockets.ConnectionClosed:
                     break  # window closed mid-tick
-                print(f"  → {DIM_LABEL.get(dim, dim)} {x}, {z}")
+                print(f"  → {DIM_LABEL.get(dim, dim)} {x}, {z}  (zoom {cur_zoom})")
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
     finally:
