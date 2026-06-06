@@ -816,7 +816,11 @@ function fill --argument-names tmpl # <token> -> picker/prompt; <token?> optiona
             case '*'
                 set -l hint ''
                 test "$tok" != "$name"; and set hint ' (enter skips)'
-                read -lP (set_color cyan)"$name$hint> "(set_color normal) val
+                # fill() runs inside `(...)` command substitution and after a
+                # piped fzf, so fd 0 isn't the terminal here — read from the tty
+                # explicitly (like fzf does), or the typed value is lost and an
+                # optional token like <count?> silently drops.
+                read -lP (set_color cyan)"$name$hint> "(set_color normal) val </dev/tty
         end
         if test -z "$val"
             test "$tok" = "$name"; and return 1 # required -> abort
