@@ -17,6 +17,14 @@ run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon nmcrcon-git fzf wl-
 description = "mc-tui: browse the cheatsheet, fill placeholders, copy or run over RCON"
 run = "bin/mc-tui"
 
+[tasks.console]
+description = "Interactive RCON console (nmcrcon, or mcrcon -t) using the saved mc-tui settings"
+run = "bin/mc-tui console"
+
+[tasks.session]
+description = "tmux/zellij session 'craftops': mc-tui in one window, RCON console in the other"
+run = "bin/mc-tui session"
+
 [tasks.pdf]
 description = "Cheatsheet PDFs into docs/pdf/ — Catppuccin Latte (print) + Mocha (screens)"
 run = [

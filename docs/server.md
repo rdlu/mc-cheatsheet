@@ -92,6 +92,14 @@ in an interactive picker:
 - **`[console]`** drops into an interactive session — `nmcrcon` when
   installed (better line editing + history), else `mcrcon -t`.
 
+Subcommands reuse the saved settings outside the picker:
+
+| Command | Use |
+| --- | --- |
+| `mise run console` (`mc-tui console`) | interactive RCON console |
+| `mc-tui run save-all flush` | one-shot command, for scripts and backups |
+| `mise run session` (`mc-tui session`) | tmux (or zellij) session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |
+
 The command and item tables are plain pipe-delimited text — inspect them
 with `mc-tui __dump catalog` (or `items`, `enchantments`, `effects`, …)
 and add your own rows in `~/.config/mc-tui/catalog.local` and

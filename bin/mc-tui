@@ -18,6 +18,11 @@
 #   ctrl-y  fill + copy to clipboard      ctrl-r  fill + run over RCON
 #   esc     back / quit
 #
+# Subcommands:
+#   mc-tui console        interactive RCON session with the saved settings
+#   mc-tui run <cmd...>   one-shot command (scripts, backups)
+#   mc-tui session        tmux/zellij: TUI + console side by side
+#
 # Config:  ~/.config/mc-tui/rcon.conf    (chmod 600 — RCON is plaintext!)
 # Players: ~/.config/mc-tui/players      (one name per line)
 
@@ -894,9 +899,68 @@ function main
     end
 end
 
+# --- terminal session: TUI + RCON console side by side ----------------------------
+# tmux (preferred): session "craftops", window 1 = mc-tui, window 2 = console.
+# Falls back to zellij with an equivalent two-tab layout.
+
+function term_session
+    set -l s craftops
+    if type -q tmux
+        if not tmux has-session -t $s 2>/dev/null
+            tmux new-session -d -s $s -n tui $SELF
+            tmux new-window -t $s -n rcon "$SELF console"
+            tmux select-window -t "$s:tui"
+        end
+        if set -q TMUX
+            tmux switch-client -t $s
+        else
+            tmux attach -t $s
+        end
+    else if type -q zellij
+        if zellij list-sessions -s 2>/dev/null | grep -qx $s
+            zellij attach $s
+        else
+            set -l layout (mktemp /tmp/mc-tui-layout.XXXXXX.kdl)
+            echo 'layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    tab name="tui" {
+        pane command="@SELF@"
+    }
+    tab name="rcon" {
+        pane command="@SELF@" {
+            args "console"
+        }
+    }
+}' | string replace -a '@SELF@' $SELF >$layout
+            zellij --session $s --new-session-with-layout $layout
+        end
+    else
+        _die 'tmux or zellij required (or run mc-tui and mc-tui console separately)'
+    end
+end
+
 # --- entrypoint ------------------------------------------------------------------
+# mc-tui              the TUI
+# mc-tui console      interactive RCON session (nmcrcon/mcrcon) with saved settings
+# mc-tui run <cmd...> one-shot command with saved settings (for scripts/backups)
+# mc-tui session      tmux/zellij session: TUI + console side by side
 
 switch "$argv[1]"
+    case console
+        rcon_term; or pause
+    case run
+        test (count $argv) -ge 2; or _die 'usage: mc-tui run <command...>'
+        rcon_exec (string join ' ' -- $argv[2..])
+    case session
+        term_session
     case __dump # mc-tui __dump catalog|items|enchantments|... (for scripting)
         if functions -q data_$argv[2]
             data_$argv[2]
