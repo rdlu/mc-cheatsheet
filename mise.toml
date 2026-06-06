@@ -1,0 +1,54 @@
+# mise (https://mise.jdx.dev) — tools + tasks for the Craft Ops site.
+#
+#   mise install     # install typst + uv (pinned below)
+#   mise run setup   # system deps: fonts + mcrcon (paru)
+#   mise run serve   # live-preview the site
+#   mise run site    # full build: PDFs + HTML into site/
+
+[tools]
+typst = "latest"
+uv = "latest"
+
+[tasks.setup]
+description = "Install system deps: Inter + JetBrains Mono fonts, mcrcon (AUR)"
+run = "paru -S --needed inter-font ttf-jetbrains-mono mcrcon"
+
+[tasks.pdf]
+description = "Cheatsheet PDFs into docs/pdf/ — Catppuccin Latte (print) + Mocha (screens)"
+run = [
+  "mkdir -p docs/pdf",
+  "typst compile --input theme=latte cheatsheet.typ docs/pdf/mc-commands-cheatsheet.pdf",
+  "typst compile --input theme=mocha cheatsheet.typ docs/pdf/mc-commands-cheatsheet-mocha.pdf",
+]
+sources = ["cheatsheet.typ"]
+outputs = [
+  "docs/pdf/mc-commands-cheatsheet.pdf",
+  "docs/pdf/mc-commands-cheatsheet-mocha.pdf",
+]
+
+[tasks.watch]
+description = "Live-rebuild the PDF while editing cheatsheet.typ (THEME=mocha for dark)"
+run = '''
+theme=${THEME:-latte}
+suffix=$([ "$theme" = mocha ] && echo -mocha || true)
+mkdir -p docs/pdf
+typst watch --input theme=$theme cheatsheet.typ docs/pdf/mc-commands-cheatsheet$suffix.pdf
+'''
+
+[tasks.site]
+description = "Build the HTML site into site/ (zensical via uvx; PDFs first — the site links them)"
+depends = ["pdf"]
+run = "uvx zensical build --clean"
+
+[tasks.serve]
+description = "Live-preview the docs site while editing (opens the browser once it's up)"
+depends = ["pdf"]
+run = '''
+(sleep 1 && xdg-open http://localhost:8000) &
+uvx zensical serve
+'''
+
+[tasks.open]
+description = "Build and open the site in the browser"
+depends = ["site"]
+run = "xdg-open site/index.html"

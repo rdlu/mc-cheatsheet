@@ -1,0 +1,4 @@
+# build outputs
+site/
+docs/pdf/
+*.pdf

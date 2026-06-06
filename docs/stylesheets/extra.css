@@ -1,0 +1,124 @@
+/* PDF download cards on the home page (docs/index.md).
+   Accents follow Catppuccin Latte; the slate scheme switches to Mocha. */
+
+.pdf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.8rem;
+  margin: 1em 0;
+}
+
+.pdf-card {
+  border-radius: 0.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--pdf-accent) 35%, transparent);
+  border-left: 0.3rem solid var(--pdf-accent);
+  background: color-mix(in srgb, var(--pdf-accent) 7%, var(--md-default-bg-color));
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.pdf-card:hover {
+  box-shadow: 0 0.2rem 0.8rem color-mix(in srgb, var(--pdf-accent) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.pdf-card.wide {
+  grid-column: 1 / -1;
+}
+
+.pdf-card .pdf-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--md-default-fg-color);
+  margin-bottom: 0.1rem;
+}
+
+.pdf-card .pdf-icon {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+.pdf-card .pdf-sub {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.55rem;
+}
+
+.pdf-card .pdf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pdf-card .pdf-links a {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.18rem 0.6rem;
+  border-radius: 1rem;
+  color: var(--pdf-accent);
+  border: 1px solid var(--pdf-accent);
+}
+
+.pdf-card .pdf-links a:hover {
+  color: var(--md-default-bg-color);
+  background: var(--pdf-accent);
+}
+
+/* Catppuccin Latte accents (light scheme) */
+.pdf-card.commands { --pdf-accent: #40a02b; }  /* green */
+
+/* Catppuccin Mocha accents (dark scheme) */
+[data-md-color-scheme="slate"] .pdf-card.commands { --pdf-accent: #a6e3a1; }
+
+/* ------------------------------------------------------------------ */
+/* Cheatsheet-style tables: accent header, zebra rows. The page accent
+   is set by docs/javascripts/accents.js via body[data-page] — same
+   Catppuccin mapping per docs area. Catppuccin Latte (light scheme): */
+
+body { --page-accent: #179299; --page-accent-fg: #ffffff; }  /* teal default */
+body[data-page="commands"] { --page-accent: #40a02b; }  /* green */
+body[data-page="tips"]     { --page-accent: #df8e1d; }  /* yellow */
+body[data-page="server"]   { --page-accent: #d20f39; }  /* red */
+
+/* Catppuccin Mocha (dark scheme): pastel accents, dark header text */
+body[data-md-color-scheme="slate"]                      { --page-accent: #94e2d5; --page-accent-fg: #11111b; }
+body[data-md-color-scheme="slate"][data-page="commands"] { --page-accent: #a6e3a1; }
+body[data-md-color-scheme="slate"][data-page="tips"]     { --page-accent: #f9e2af; }
+body[data-md-color-scheme="slate"][data-page="server"]   { --page-accent: #f38ba8; }
+
+/* Content tables: accent header block + rounded corners, echoing the
+   cheatsheet section cards */
+.md-typeset table:not([class]) {
+  border: 1px solid color-mix(in srgb, var(--page-accent) 35%, transparent);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--page-accent);
+  color: var(--page-accent-fg);
+  font-weight: 700;
+}
+
+.md-typeset table:not([class]) th code,
+.md-typeset table:not([class]) th a {
+  color: inherit;
+  background: transparent;
+}
+
+/* zebra + hover rows, tinted with the page accent */
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--page-accent) 6%, transparent);
+}
+
+.md-typeset table:not([class]) tbody tr:hover {
+  background: color-mix(in srgb, var(--page-accent) 14%, transparent);
+}
+
+/* Command columns shouldn't wrap mid-command */
+.md-typeset table:not([class]) td:first-child {
+  white-space: nowrap;
+}
