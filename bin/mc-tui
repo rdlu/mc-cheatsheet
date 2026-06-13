@@ -1183,9 +1183,10 @@ function action_menu --argument-names cmd
         else
             set opts 'run over RCON' 'copy to clipboard' 'run + copy' 'edit command first'
         end
+        set -l hdr (status_line)\n"$cmd"
         set -l choice (printf '%s\n' $opts cancel | \
             fzf --ansi --reverse --height 45% --prompt 'action> ' \
-                --header (printf '%s\n%s' (status_line) "$cmd"))
+                --header $hdr)
         switch "$choice"
             case 'run over*'
                 rcon_exec $cmd
@@ -1216,10 +1217,11 @@ function command_view --argument-names cat
         # template and description are tab-separated: fzf strips the ANSI but
         # keeps the tab, so the template comes back clean even when it's longer
         # than the display column (e.g. the god-gear give commands).
+        set -l hdr (status_line)\n"$cat | enter: fill + action menu | ctrl-y fill + copy | ctrl-r fill + run | esc back"
         set -l out (catalog | \
             awk -F'|' -v c="$cat" '$1 == c { printf "%-62s\t\033[2m%s\033[0m\n", $2, $3 }' | \
             fzf --ansi --reverse --expect=ctrl-y,ctrl-r \
-                --header (printf '%s\n%s' (status_line) "$cat | enter: fill + action menu | ctrl-y fill + copy | ctrl-r fill + run | esc back") \
+                --header $hdr \
                 --prompt "$cat> " \
                 --preview "$SELF __preview {}" --preview-window 'bottom,4,wrap')
         test (count $out) -lt 2; and return
@@ -1246,6 +1248,7 @@ end
 function main
     command -v fzf >/dev/null; or _die 'fzf is required'
     while true
+        set -l hdr (status_line)\n'enter: browse | esc: quit'
         set -l out (begin
                 catalog | awk -F'|' '
                     !seen[$1]++ { order[++n] = $1 }
@@ -1259,7 +1262,7 @@ function main
                     '[status]' 're-check the server connection now' \
                     '[settings]' 'RCON host / port / password'
             end | fzf --ansi --reverse \
-            --header (printf '%s\nenter: browse | esc: quit' (status_line)) --prompt 'mc-tui> ' \
+            --header $hdr --prompt 'mc-tui> ' \
             --preview "$SELF __catpreview {}" --preview-window 'right,45%,wrap')
         test -z "$out"; and break
         set -l choice (string replace -r '  +.*$' '' -- $out | string trim)
