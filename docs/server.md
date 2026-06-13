@@ -120,6 +120,7 @@ Subcommands reuse the saved settings outside the picker:
 | --- | --- |
 | `mise run console` (`mc-tui console`) | interactive RCON console |
 | `mc-tui run save-all flush` | one-shot command, for scripts and backups |
+| `mc-tui status [--raw]` | cached RCON reachability check — the TUI shows it in the menu headers and disables sending while the server is down. `--raw` prints `up`/`down`/`unconfigured` for scripts |
 | `mc-tui map [player]` | open the world on chunkbase (centered on a player, if given) |
 | `mise run follow [player] [secs]` (`mc-tui follow`) | live map — Chromium window that re-centers on the player every N s. No player → pick from who's online and choose the interval; interval + zoom default to `[settings]` |
 | `mise run session` (`mc-tui session`) | tmux session `craftops` — TUI in one window, console in the other, copy with ++ctrl+y++ and paste across |

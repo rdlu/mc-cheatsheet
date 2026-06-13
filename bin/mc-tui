@@ -557,6 +557,7 @@ function load_conf
     set -g PLATFORM java_26_1 # chunkbase seed-map platform tag
     set -g INTERVAL 10 # follow-map refresh seconds
     set -g ZOOM 2 # follow-map starting zoom
+    set -g STATUS_TTL 10 # seconds to cache the RCON reachability check
     test -r $CONF; or return 0
     while read -l line
         set -l kv (string split -m1 '=' -- $line)
@@ -567,14 +568,15 @@ function load_conf
             case platform; set -g PLATFORM $kv[2]
             case interval; set -g INTERVAL $kv[2]
             case zoom; set -g ZOOM $kv[2]
+            case status_ttl; set -g STATUS_TTL $kv[2]
         end
     end <$CONF
 end
 
 function save_conf
     mkdir -p $CFGDIR
-    printf 'host=%s\nport=%s\npass=%s\nplatform=%s\ninterval=%s\nzoom=%s\n' \
-        "$HOST" "$PORT" "$PASS" "$PLATFORM" "$INTERVAL" "$ZOOM" >$CONF
+    printf 'host=%s\nport=%s\npass=%s\nplatform=%s\ninterval=%s\nzoom=%s\nstatus_ttl=%s\n' \
+        "$HOST" "$PORT" "$PASS" "$PLATFORM" "$INTERVAL" "$ZOOM" "$STATUS_TTL" >$CONF
     chmod 600 $CONF
 end
 
@@ -632,6 +634,85 @@ end
 
 function pause
     read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+# --- server status (cached RCON reachability) --------------------------------
+# A lightweight `list` over RCON tells us the server is reachable AND the
+# password is right. The result is cached in $STATUS_CACHE for $STATUS_TTL
+# seconds (keyed by host:port, so changing the connection invalidates it) so
+# navigating the menus doesn't hammer the server. State is one of:
+#   up | down | unconfigured
+
+set -g STATUS_CACHE $CFGDIR/.status
+
+function status_probe # real check, no cache. echoes up|down|unconfigured
+    type -q mcrcon; or begin
+        echo down
+        return
+    end
+    load_conf
+    test -n "$PASS"; or begin
+        echo unconfigured
+        return
+    end
+    set -l runner # bound the connect so an unreachable host can't hang the UI
+    type -q timeout; and set runner timeout 3
+    if MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS $runner mcrcon -c list >/dev/null 2>&1
+        echo up
+    else
+        echo down
+    end
+end
+
+function server_status # cached state: up|down|unconfigured
+    load_conf
+    if test -r $STATUS_CACHE
+        set -l parts (string split ' ' -- (cat $STATUS_CACHE))
+        if test (count $parts) -ge 3 -a "$parts[3]" = "$HOST:$PORT"
+            set -l age (math (date +%s) - $parts[1])
+            if test "$age" -ge 0 -a "$age" -lt "$STATUS_TTL"
+                echo $parts[2]
+                return
+            end
+        end
+    end
+    set -l state (status_probe)
+    mkdir -p $CFGDIR
+    printf '%s %s %s\n' (date +%s) $state "$HOST:$PORT" >$STATUS_CACHE
+    echo $state
+end
+
+function status_refresh # force a re-probe, update the cache, echo the state
+    rm -f $STATUS_CACHE
+    server_status
+end
+
+function status_badge --argument-names state # colored one-word badge
+    switch "$state"
+        case up
+            echo (set_color green)'● online'(set_color normal)
+        case down
+            echo (set_color red)'● offline'(set_color normal)
+        case unconfigured
+            echo (set_color yellow)'● not configured'(set_color normal)
+        case '*'
+            echo (set_color -d)'● unknown'(set_color normal)
+    end
+end
+
+function status_line # host:port + badge + freshness, for fzf headers
+    set -l state (server_status)
+    set -l badge (status_badge $state)
+    set -l age ''
+    if test -r $STATUS_CACHE
+        set -l parts (string split ' ' -- (cat $STATUS_CACHE))
+        test (count $parts) -ge 1; and set age (math (date +%s) - $parts[1])
+    end
+    if test -n "$age"
+        echo "$HOST:$PORT  $badge  "(set_color -d)"checked "$age"s ago"(set_color normal)
+    else
+        echo "$HOST:$PORT  $badge"
+    end
 end
 
 # --- chunkbase seed map -------------------------------------------------------
@@ -907,6 +988,7 @@ function settings_view
                 "platform  $PLATFORM" \
                 "follow interval  $INTERVAL s" \
                 "follow zoom      $ZOOM" \
+                "status cache     $STATUS_TTL s" \
                 'test connection (runs list)' \
                 back | fzf --reverse --height 50% --prompt 'settings> ' \
                 --header "RCON is plaintext — localhost / LAN / ssh tunnel only · saved to $CONF (600)")
@@ -924,6 +1006,7 @@ function settings_view
                 echo
                 test -n "$v"; and set -g PASS $v
                 save_conf
+                status_refresh >/dev/null
             case 'platform*'
                 echo 'chunkbase seed-map version tag, e.g. java_26_1, java_1_21, bedrock_1_21'
                 read -lP "platform [$PLATFORM]> " v
@@ -949,8 +1032,19 @@ function settings_view
                     echo 'must be a number'
                     pause
                 end
+            case 'status cache*'
+                echo 'seconds to cache the server status check (lower = pings more often)'
+                read -lP "status cache ttl [$STATUS_TTL]> " v
+                if string match -rq '^[0-9]+$' -- "$v"
+                    set -g STATUS_TTL $v
+                    save_conf
+                else if test -n "$v"
+                    echo 'must be a whole number'
+                    pause
+                end
             case 'test*'
                 rcon_exec list
+                status_refresh >/dev/null
                 pause
             case '*'
                 return
@@ -1079,18 +1173,25 @@ end
 
 function action_menu --argument-names cmd
     while true
-        set -l choice (printf '%s\n' \
-                'run over RCON' \
-                'copy to clipboard' \
-                'run + copy' \
-                'edit command first' \
-                cancel | fzf --reverse --height 40% --prompt 'action> ' --header "$cmd")
+        # when the server is offline, drop the RCON actions entirely — only
+        # copy / edit / refresh remain. unconfigured still offers run, since
+        # rcon_exec will open [settings] to get a password.
+        set -l state (server_status)
+        set -l opts
+        if test "$state" = down
+            set opts 'copy to clipboard' 'edit command first' 'refresh status'
+        else
+            set opts 'run over RCON' 'copy to clipboard' 'run + copy' 'edit command first'
+        end
+        set -l choice (printf '%s\n' $opts cancel | \
+            fzf --ansi --reverse --height 45% --prompt 'action> ' \
+                --header (printf '%s\n%s' (status_line) "$cmd"))
         switch "$choice"
             case 'run over*'
                 rcon_exec $cmd
                 pause
                 return
-            case 'copy*'
+            case 'copy to*'
                 clip $cmd
                 pause
                 return
@@ -1102,6 +1203,8 @@ function action_menu --argument-names cmd
             case 'edit*'
                 read -lP 'command> ' -c "$cmd" edited
                 test -n "$edited"; and set cmd $edited
+            case 'refresh*'
+                status_refresh >/dev/null
             case '*'
                 return
         end
@@ -1116,7 +1219,7 @@ function command_view --argument-names cat
         set -l out (catalog | \
             awk -F'|' -v c="$cat" '$1 == c { printf "%-62s\t\033[2m%s\033[0m\n", $2, $3 }' | \
             fzf --ansi --reverse --expect=ctrl-y,ctrl-r \
-                --header "$cat | enter: fill + action menu | ctrl-y fill + copy | ctrl-r fill + run | esc back" \
+                --header (printf '%s\n%s' (status_line) "$cat | enter: fill + action menu | ctrl-y fill + copy | ctrl-r fill + run | esc back") \
                 --prompt "$cat> " \
                 --preview "$SELF __preview {}" --preview-window 'bottom,4,wrap')
         test (count $out) -lt 2; and return
@@ -1128,7 +1231,11 @@ function command_view --argument-names cat
                 clip $cmd
                 pause
             case ctrl-r
-                rcon_exec $cmd
+                if test (server_status) = down
+                    echo 'server offline — not sending ([status] on the main menu to re-check)'
+                else
+                    rcon_exec $cmd
+                end
                 pause
             case '*'
                 action_menu $cmd
@@ -1149,15 +1256,23 @@ function main
                     '[console]' 'interactive RCON session (nmcrcon / mcrcon -t)' \
                     '[map]' 'open the world on chunkbase (seed / player position)' \
                     '[players]' 'saved names for <player> slots' \
+                    '[status]' 're-check the server connection now' \
                     '[settings]' 'RCON host / port / password'
             end | fzf --ansi --reverse \
-            --header 'enter: browse | esc: quit' --prompt 'mc-tui> ' \
+            --header (printf '%s\nenter: browse | esc: quit' (status_line)) --prompt 'mc-tui> ' \
             --preview "$SELF __catpreview {}" --preview-window 'right,45%,wrap')
         test -z "$out"; and break
         set -l choice (string replace -r '  +.*$' '' -- $out | string trim)
         switch $choice
             case '[console]'
-                rcon_term
+                if test (server_status) = down
+                    echo 'server offline — RCON console unavailable ([status] to re-check)'
+                    pause
+                else
+                    rcon_term
+                end
+            case '[status]'
+                status_refresh >/dev/null
             case '[map]'
                 map_view
             case '[players]'
@@ -1238,8 +1353,17 @@ end
 # mc-tui map [player]            open the world on chunkbase (centered on player)
 # mc-tui follow [player] [secs]  live map: chromium tab re-centered every N s
 #                                (no player: pick from who's online, ask interval)
+# mc-tui status [--raw]          server reachability (cached); --raw: just up/down/...
 
 switch "$argv[1]"
+    case status # cached reachability — `--raw` for scripts, else a friendly line
+        if test "$argv[2]" = --raw
+            server_status
+        else
+            status_line
+        end
+    case __status # always-fresh machine-readable state (for scripts/healthchecks)
+        status_refresh
     case console
         rcon_term; or pause
     case run

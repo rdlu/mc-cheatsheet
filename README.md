@@ -77,6 +77,7 @@ between the overworld, nether, and end.
 | `mc-tui` | the interactive TUI |
 | `mc-tui console` | interactive RCON session (saved settings) |
 | `mc-tui run <cmd…>` | one-shot command — handy in scripts and backups |
+| `mc-tui status [--raw]` | cached server reachability — `--raw` prints just `up`/`down`/`unconfigured` |
 | `mc-tui map [player]` | open the world on chunkbase |
 | `mc-tui follow [player] [secs]` | live follow map |
 | `mc-tui session [tmux\|zellij]` | TUI + RCON console side by side |
