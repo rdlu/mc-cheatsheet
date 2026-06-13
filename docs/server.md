@@ -65,7 +65,7 @@ mcrcon "say Backup starting" save-off "save-all flush"
 
 ## mc-tui — the cheatsheet as a TUI
 
-[`bin/mc-tui`](https://github.com/rdlu/mc-cheatsheet/blob/main/bin/mc-tui)
+[`bin/mc-tui`](https://github.com/rdlu/minecraft-tui/blob/main/bin/mc-tui)
 (fish + fzf, run it with `mise run tui`) wraps every command on this site
 in an interactive picker:
 
@@ -103,7 +103,7 @@ in an interactive picker:
   the player every few seconds, so you can watch them move in real time.
   Chunkbase only reads the view from the URL, so each update reloads the
   tab over the DevTools protocol — driven by
-  [`scripts/follow-map.py`](https://github.com/rdlu/mc-cheatsheet/blob/main/scripts/follow-map.py)
+  [`scripts/follow-map.py`](https://github.com/rdlu/minecraft-tui/blob/main/scripts/follow-map.py)
   (needs `chromium` + `uv`; the script's Python deps are fetched on first
   run). Run it with **no player** (`mise run follow`) and it lists who's
   online, lets you pick, then asks the refresh interval (default from

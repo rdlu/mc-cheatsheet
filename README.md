@@ -6,8 +6,8 @@ a printable **PDF**, and **`mc-tui`** — an interactive terminal app that build
 commands for you and sends them over **RCON**. Targets vanilla **26.1**
 (verified against a live Fabric server; pre-26 differences are footnoted).
 
-**📖 Read it online: <https://rdlu.github.io/mc-cheatsheet/>**
-&nbsp;·&nbsp; **🧩 Web command builder: <https://rdlu.github.io/mc-cheatsheet/builder/>**
+**📖 Read it online: <https://rdlu.github.io/minecraft-tui/>**
+&nbsp;·&nbsp; **🧩 Web command builder: <https://rdlu.github.io/minecraft-tui/builder/>**
 
 All commands are written **without the leading `/`**, the way the server
 console and RCON expect them — copy, paste, run.
@@ -20,7 +20,7 @@ console and RCON expect them — copy, paste, run.
 
 | | |
 | --- | --- |
-| 🌐 **Docs site** | Browsable [command pages](https://rdlu.github.io/mc-cheatsheet/commands/selectors/) and [survival tips](https://rdlu.github.io/mc-cheatsheet/tips/early-game/) (early game, farms, enchanting, nether, villagers) — built with [Zensical](https://zensical.org). |
+| 🌐 **Docs site** | Browsable [command pages](https://rdlu.github.io/minecraft-tui/commands/selectors/) and [survival tips](https://rdlu.github.io/minecraft-tui/tips/early-game/) (early game, farms, enchanting, nether, villagers) — built with [Zensical](https://zensical.org). |
 | 🖨️ **PDF cheatsheet** | A two-page landscape A4 sheet ([Typst](https://typst.app)), Catppuccin **Latte** for print + **Mocha** for screens. Page 1 = server commands, page 2 = survival tips. |
 | ⌨️ **`mc-tui`** | An [fzf](https://github.com/junegunn/fzf) terminal app: pick a command, fill the blanks from smart pickers, then **copy** it or **run it over RCON**. Plus a chunkbase seed-map opener and a **live follow map**. |
 | 🧩 **Web command builder** | The same picker as a phone-friendly web page — no install, searchable in **English or Brazilian Portuguese (pt-BR)**. |

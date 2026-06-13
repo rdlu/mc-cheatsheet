@@ -21,7 +21,7 @@ Set Framerate 24
 
 # hidden setup so the recording opens on a clean prompt
 Hide
-Type "cd /home/rdlu/Projects/mc-cheatsheet" Enter
+Type "cd /home/rdlu/Projects/minecraft-tui" Enter
 Type "clear" Enter
 Show
 
