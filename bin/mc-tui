@@ -700,19 +700,9 @@ function status_badge --argument-names state # colored one-word badge
     end
 end
 
-function status_line # host:port + badge + freshness, for fzf headers
+function status_line # host:port + badge, for fzf headers
     set -l state (server_status)
-    set -l badge (status_badge $state)
-    set -l age ''
-    if test -r $STATUS_CACHE
-        set -l parts (string split ' ' -- (cat $STATUS_CACHE))
-        test (count $parts) -ge 1; and set age (math (date +%s) - $parts[1])
-    end
-    if test -n "$age"
-        echo "$HOST:$PORT  $badge  "(set_color -d)"checked "$age"s ago"(set_color normal)
-    else
-        echo "$HOST:$PORT  $badge"
-    end
+    echo "$HOST:$PORT  "(status_badge $state)
 end
 
 # --- chunkbase seed map -------------------------------------------------------
