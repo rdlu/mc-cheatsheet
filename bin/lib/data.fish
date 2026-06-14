@@ -299,6 +299,73 @@ blocks|soul_sand|Areia das almas|bubble elevators up
 blocks|magma_block|Bloco de magma|bubble elevators down
 blocks|beacon|Sinalizador|haste II for the whole base
 blocks|conduit|Aqueduto|underwater beacon
+build|stone_bricks|Tijolos de pedra|classic castle wall
+build|mossy_stone_bricks|Tijolos de pedra musgosos|aged, overgrown look
+build|cracked_stone_bricks|Tijolos de pedra rachados|ruined-castle accent
+build|chiseled_stone_bricks|Tijolos de pedra entalhados|decorative inlay
+build|smooth_stone|Pedra lisa|clean grey, pairs with stone slabs
+build|polished_andesite|Andesito polido|smooth neutral grey
+build|polished_diorite|Diorito polido|light/white stone
+build|polished_granite|Granito polido|warm pink-brown stone
+build|bricks|Tijolos|red clay — cozy homes
+build|mossy_cobblestone|Pedregulho musgoso|rustic walls and paths
+build|deepslate_bricks|Tijolos de ardósia|dark grey, dramatic
+build|deepslate_tiles|Ladrilhos de ardósia|fine dark tiling
+build|polished_deepslate|Ardósia polida|smooth charcoal
+build|cobbled_deepslate|Ardósia lascada|raw dark stone
+build|polished_tuff|Tufo polido|soft greenish-grey (1.21)
+build|tuff_bricks|Tijolos de tufo|muted brick variant (1.21)
+build|calcite|Calcita|bright off-white
+build|sandstone|Arenito|desert builds
+build|smooth_sandstone|Arenito liso|clean sand walls
+build|cut_sandstone|Arenito cortado|paneled sand
+build|red_sandstone|Arenito vermelho|mesa/warm builds
+build|quartz_block|Bloco de quartzo|pure white pillars and trim
+build|smooth_quartz|Quartzo liso|seamless white
+build|chiseled_quartz_block|Bloco de quartzo entalhado|white detail block
+build|quartz_bricks|Tijolos de quartzo|white brickwork
+build|prismarine_bricks|Tijolos de prismarinho|teal — ocean keeps
+build|dark_prismarine|Prismarinho escuro|deep teal accent
+build|blackstone|Pedra negra|black nether stone
+build|polished_blackstone|Pedra negra polida|smooth black
+build|polished_blackstone_bricks|Tijolos de pedra negra polida|black castle brick
+build|nether_bricks|Tijolos do Nether|dark red-brown, fortress
+build|red_nether_bricks|Tijolos vermelhos do Nether|deep crimson
+build|end_stone_bricks|Tijolos da pedra do End|pale yellow, end builds
+build|purpur_block|Bloco de púrpura|purple end-city block
+roof|stone_brick_stairs|Escadas de tijolos de pedra|rooftop + steps
+roof|stone_brick_slab|Laje de tijolos de pedra|thin roofs, ledges
+roof|mossy_stone_brick_stairs|Escadas de tijolos de pedra musgosos|aged roof
+roof|brick_stairs|Escadas de tijolos|red-roof cottages
+roof|brick_slab|Laje de tijolos|red roof tiles
+roof|smooth_stone_slab|Laje de pedra lisa|clean grey ledge
+roof|polished_andesite_stairs|Escadas de andesito polido|grey roof + steps
+roof|polished_andesite_slab|Laje de andesito polido|grey ledge
+roof|polished_diorite_stairs|Escadas de diorito polido|white roof + steps
+roof|polished_diorite_slab|Laje de diorito polido|white ledge
+roof|polished_granite_stairs|Escadas de granito polido|warm roof + steps
+roof|polished_granite_slab|Laje de granito polido|warm ledge
+roof|deepslate_brick_stairs|Escadas de tijolos de ardósia|dark roof + steps
+roof|deepslate_brick_slab|Laje de tijolos de ardósia|dark ledge
+roof|polished_deepslate_stairs|Escadas de ardósia polida|charcoal roof
+roof|sandstone_stairs|Escadas de arenito|desert roof + steps
+roof|smooth_sandstone_slab|Laje de arenito liso|sand ledge
+roof|quartz_stairs|Escadas de quartzo|white roof + steps
+roof|smooth_quartz_stairs|Escadas de quartzo liso|seamless white roof
+roof|nether_brick_stairs|Escadas de tijolos do Nether|dark fortress roof
+roof|blackstone_stairs|Escadas de pedra negra|black roof + steps
+roof|polished_blackstone_brick_stairs|Escadas de tijolos de pedra negra polida|black castle roof
+roof|prismarine_brick_stairs|Escadas de tijolos de prismarinho|teal roof
+roof|dark_prismarine_stairs|Escadas de prismarinho escuro|deep teal roof
+roof|purpur_stairs|Escadas de púrpura|purple roof + steps
+wall|stone_brick_wall|Muro de tijolos de pedra|castle battlements
+wall|cobblestone_wall|Muro de pedregulho|rustic fences
+wall|mossy_stone_brick_wall|Muro de tijolos de pedra musgosos|aged battlements
+wall|brick_wall|Muro de tijolos|red-brick fences
+wall|deepslate_brick_wall|Muro de tijolos de ardósia|dark battlements
+wall|polished_blackstone_brick_wall|Muro de tijolos de pedra negra polida|black battlements
+wall|sandstone_wall|Muro de arenito|desert walls
+wall|nether_brick_wall|Muro de tijolos do Nether|fortress walls
 redstone|redstone|Pó de redstone|
 redstone|redstone_torch|Tocha de redstone|
 redstone|redstone_block|Bloco de redstone|

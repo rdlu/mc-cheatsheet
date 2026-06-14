@@ -58,7 +58,7 @@ typst watch --input theme=$theme cheatsheet.typ docs/pdf/mc-cheatsheet$suffix.pd
 [tasks.builder-data]
 description = "Generate the web command-builder data from the mc-tui tables"
 run = "python3 scripts/builder-data.py"
-sources = ["bin/mc-tui", "scripts/builder-data.py"]
+sources = ["bin/lib/data.fish", "scripts/builder-data.py"]
 outputs = ["docs/javascripts/builder-data.js"]
 
 [tasks.site]
