@@ -265,6 +265,113 @@ def generate_station(anchor, direction, deck, color, kind):
     return cmds
 
 
+# --- junctions ---------------------------------------------------------------
+
+VEC2CARD = {(0, -1): "north", (0, 1): "south", (1, 0): "east", (-1, 0): "west"}
+
+
+def _curve(card_a, card_b):
+    """Canonical curved-rail shape connecting two perpendicular cardinals,
+    e.g. ('west','south') -> 'south_west'. Names are always {ns}_{ew}."""
+    ns = card_a if card_a in ("north", "south") else card_b
+    ew = card_a if card_a in ("east", "west") else card_b
+    return f"{ns}_{ew}"
+
+
+def command_block(x, y, z, command):
+    """An impulse command block (needs-redstone) carrying `command`. Triggered
+    by a redstone pulse, it runs the command once — used to `setblock` a
+    junction rail's shape, the one switch action plain redstone cannot do."""
+    return setblock(x, y, z, 'command_block{Command:"' + command + '"}')
+
+
+def generate_junction(anchor, direction, deck, j):
+    """A single-branch track switch centred on `anchor` (a rail block), built
+    for travel along `direction`.
+
+    A bare rail at a junction can't be switched both ways by redstone alone
+    (gaining power forces one curve, losing it doesn't switch back — the rail
+    clings to its shape; verified live on 26.1). So the shape is driven by two
+    impulse command blocks that `setblock` it: a lever fires the "divert" one,
+    and a detector rail past the junction fires the "reset to main" one, so the
+    switch springs back to the through line after each cart. The command blocks
+    sit clear of the junction rail so they never power (and accidentally throw)
+    it — the rail is moved only by their setblock.
+
+    kind:
+      t  through line stays straight; the branch peels off 90° to `branch`.
+      y  two-way fork: rests toward the side opposite `branch`, diverts to it.
+    """
+    ax, ay, az = anchor
+    dx, dz = DIRS[direction]
+    rx, rz = (-dz, dx)                       # right relative to travel
+    side = str(j.get("branch", "right")).strip().lower()
+    if side not in ("left", "right"):
+        raise RailError(f"junction `branch` must be left or right (got {side!r})")
+    kind = str(j.get("kind", "t")).strip().lower()
+    if kind not in ("t", "y"):
+        raise RailError(f"junction `kind` must be t or y (got {kind!r})")
+    bsign = 1 if side == "right" else -1
+    bx, bz = (bsign * rx, bsign * rz)        # branch unit vector
+    straight = "east_west" if dx else "north_south"
+    branch_line = "north_south" if bx == 0 else "east_west"
+    divert = _curve(VEC2CARD[(-dx, -dz)], VEC2CARD[(bx, bz)])
+    # for a Y there is no straight rest: the through side becomes a curve too
+    rest = divert if kind == "t" else _curve(VEC2CARD[(-dx, -dz)],
+                                             VEC2CARD[(-bx, -bz)])
+    main = straight if kind == "t" else rest
+
+    def w(f, r, u):                          # forward/right/up -> world x,y,z
+        return (ax + f * dx + r * rx, ay + u, az + f * dz + r * rz)
+
+    cmds = []
+    # decks: the through line and the branch stub, one below rail level
+    cmds.append(fill(*w(-1, 0, -1), *w(2, 0, -1), deck))
+    cmds.append(fill(*w(0, bsign * 1, -1), *w(0, bsign * 4, -1), deck))
+
+    # approach: a powered rail (+ redstone) so the cart enters at speed; the
+    # redstone sits diagonally below the junction, never powering it.
+    cmds.append(setblock(*w(-1, 0, 0), f"powered_rail[shape={straight}]"))
+    cmds.append(setblock(*w(-1, 0, -1), "redstone_block"))
+    # the junction rail itself — never powered, shape set only by command block
+    cmds.append(setblock(*w(0, 0, 0), f"rail[shape={main}]"))
+
+    if kind == "t":                          # through line continues straight
+        cmds.append(setblock(*w(1, 0, 0), f"powered_rail[shape={straight}]"))
+        cmds.append(setblock(*w(1, 0, -1), "redstone_block"))
+        cmds.append(setblock(*w(2, 0, 0), f"rail[shape={straight}]"))
+    else:                                    # Y: the "main" side is also a stub
+        oline = branch_line                  # both exits share the cross axis
+        cmds.append(fill(*w(0, -bsign * 1, -1), *w(0, -bsign * 3, -1), deck))
+        cmds.append(setblock(*w(0, -bsign * 1, 0), f"rail[shape={oline}]"))
+        cmds.append(setblock(*w(0, -bsign * 2, 0), f"powered_rail[shape={oline}]"))
+        cmds.append(setblock(*w(0, -bsign * 2, -1), "redstone_block"))
+        cmds.append(setblock(*w(0, -bsign * 3, 0), f"rail[shape={oline}]"))
+
+    # branch stub: a turn rail, then a detector rail sitting on the reset command
+    # block, then a one-block coast before the re-accel powered rail. The coast
+    # gap keeps the re-accel's redstone_block off the reset command block — were
+    # it adjacent it would power the block constantly and the detector could
+    # never pulse it (the switch would never spring back). Verified live.
+    cmds.append(setblock(*w(0, bsign * 1, 0), f"rail[shape={branch_line}]"))
+    cmds.append(command_block(*w(0, bsign * 2, -1),
+                              f"setblock {ax} {ay} {az} minecraft:rail[shape={main}]"))
+    cmds.append(setblock(*w(0, bsign * 2, 0), f"detector_rail[shape={branch_line}]"))
+    cmds.append(setblock(*w(0, bsign * 3, 0), f"rail[shape={branch_line}]"))      # coast
+    cmds.append(setblock(*w(0, bsign * 4, 0), f"powered_rail[shape={branch_line}]"))
+    cmds.append(setblock(*w(0, bsign * 4, -1), "redstone_block"))
+
+    # control pillar diagonally behind the junction, opposite the branch — clear
+    # of the through line and both stubs, and only diagonal to the junction rail
+    # (so powering it never throws the switch): a divert command block, lever on
+    # top. Flip the lever to send the next cart down the branch.
+    cmds.append(setblock(*w(-1, -bsign * 1, -1), deck))           # tidy footing
+    cmds.append(command_block(*w(-1, -bsign * 1, 0),
+                              f"setblock {ax} {ay} {az} minecraft:rail[shape={divert}]"))
+    cmds.append(setblock(*w(-1, -bsign * 1, 1), "lever[face=floor]"))
+    return cmds
+
+
 # --- definition loading & resolution -----------------------------------------
 
 def load(path):
@@ -373,6 +480,13 @@ def compile_cmds(data, pose=None):
             raise RailError(f"station type `{st.get('type')}` — use halt or covered")
         anchor, direction = station_anchor(st.get("at", "start"), segments)
         cmds += generate_station(anchor, direction, deck, color, kind)
+    # junctions: a switch that overlays the line (the junction rail replaces the
+    # through rail at its anchor), with a branch stub peeling off to the side.
+    for jn in (data.get("junctions") or []):
+        if not isinstance(jn, dict):
+            raise RailError("each junction must be a mapping")
+        anchor, direction = station_anchor(jn.get("at", "start"), segments)
+        cmds += generate_junction(anchor, direction, deck, jn)
     # optional buffer stop: one block in the cart's path past the last rail, so a
     # cart can't fly off the end. It sits on the centre line at rail level, so the
     # next segment's rail overwrites it cleanly when you continue the line.
@@ -413,8 +527,9 @@ def main():
             total = len(compile_cmds(data, pose))
             name = (data.get("line") or {}).get("id", "?")
             nst = len(data.get("stations") or [])
+            njn = len(data.get("junctions") or [])
             print(f"OK — line {name!r}: {len(segments)} segment(s), "
-                  f"{nst} station(s), {total} command(s)")
+                  f"{nst} station(s), {njn} junction(s), {total} command(s)")
     except RailError as e:
         print(f"railroad: {e}", file=sys.stderr)
         sys.exit(2)
