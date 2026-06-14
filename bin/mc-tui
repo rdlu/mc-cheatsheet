@@ -157,7 +157,24 @@ maintenance|save-on|resume autosave
 maintenance|say Server restarting in 5 minutes|warn before restarts
 maintenance|stop|graceful shutdown (saves first)
 maintenance|reload|reload datapacks
-maintenance|help <command?>|list commands or usage of one'
+maintenance|help <command?>|list commands or usage of one
+railroad|give <player> powered_rail 64|powered (gold) rails — the boost rails
+railroad|give <player> rail 64|plain rails — curves and corners
+railroad|give <player> redstone_block 64|power source under powered rails (every 9)
+railroad|give <player> detector_rail 16|redstone pulse when a cart passes
+railroad|give <player> activator_rail 16|toggles cart behavior (eject, prime tnt)
+railroad|give <player> minecart 8|ride the rails
+railroad|give <player> chest_minecart 8|cargo on rails
+railroad|give <player> stone_button 16|start a parked cart at a station
+railroad|give <player> lever 8|toggle powered rails / switches
+railroad|give <player> polished_andesite 64|deck — neutral grey (default)
+railroad|give <player> polished_diorite 64|deck — light/white
+railroad|give <player> polished_granite 64|deck — warm
+railroad|give <player> stone_bricks 64|deck — classic
+railroad|give <player> deepslate_bricks 64|deck — dark
+railroad|give <player> glass 64|see-through guard walls
+railroad|give <player> oak_fence 64|simple guard rail
+railroad|give @a white_concrete 64|line color — swap white_ for any of the 16 colors'
     test -r $CFGDIR/catalog.local; and cat $CFGDIR/catalog.local
 end
 
@@ -602,6 +619,28 @@ function rcon_exec # one command (single argument)
     MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $argv[1]
 end
 
+# Send many commands over a single mcrcon connection — each argument is one
+# command (mcrcon runs positional args sequentially). One connect for the whole
+# batch beats one-per-command on a remote server. Chunked so a huge build can't
+# overflow argv or a single response. Used by the railroad builder.
+function rcon_exec_many # each argument is one command
+    type -q mcrcon; or begin
+        echo 'mcrcon not installed (mise run setup)' >&2
+        return 1
+    end
+    ensure_conf; or return 1
+    set -l n (count $argv)
+    test $n -gt 0; or return 0
+    set -l batch 100
+    set -l i 1
+    while test $i -le $n
+        set -l j (math "$i + $batch - 1")
+        test $j -gt $n; and set j $n
+        MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $argv[$i..$j]; or return 1
+        set i (math "$j + 1")
+    end
+end
+
 # Interactive console: prefer nmcrcon (line editing, Ctrl-R history,
 # correct multi-packet responses) and fall back to mcrcon -t. One-shot
 # commands (rcon_exec) stay on mcrcon — nmcrcon has no one-shot mode yet.
@@ -752,6 +791,51 @@ function player_loc --argument-names who
             string match -q '*the_nether*' -- $dimraw; and set dim nether
             string match -q '*the_end*' -- $dimraw; and set dim end
             echo $dim $x $z
+            return 0
+        end
+        test "$attempt" -lt 3; and sleep 1
+    end
+    return 1
+end
+
+# Minecraft yaw -> cardinal facing. MC yaw: 0 = south (+Z), 90 = west (-X),
+# 180 = north (-Z), 270 = east (+X). Snap to the nearest of the four: shift by
+# 45, take 90-degree buckets, mod 4. Handles negative and >360 yaws.
+function yaw_to_dir --argument-names yaw
+    set -l n (math -s0 "floor(((($yaw % 360) + 360) % 360 + 45) / 90) % 4")
+    switch $n
+        case 0
+            echo south
+        case 1
+            echo west
+        case 2
+            echo north
+        case '*'
+            echo east
+    end
+end
+
+# echoes "<dim> <x> <y> <z> <dir>" for an online player, or fails. Like
+# player_loc but also returns the feet-block Y and the cardinal facing (from
+# Rotation's yaw), for the railroad builder. Same brief retry: the entity isn't
+# queryable for a second or two right after joining or changing dimension.
+function player_pose --argument-names who
+    for attempt in 1 2 3
+        set -l pos (rcon_exec "data get entity $who Pos" 2>&1 | string join ' ')
+        set -l m (string match -r '\[\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d,\s*(-?[0-9.]+)d' -- $pos)
+        if test (count $m) -ge 4
+            set -l x (math -s0 "floor($m[2])")
+            set -l y (math -s0 "floor($m[3])") # feet block = rail (riding) level
+            set -l z (math -s0 "floor($m[4])")
+            set -l rot (rcon_exec "data get entity $who Rotation" 2>&1 | string join ' ')
+            set -l ry (string match -r '\[\s*(-?[0-9.]+)f' -- $rot)
+            set -l dir south
+            test (count $ry) -ge 2; and set dir (yaw_to_dir $ry[2])
+            set -l dimraw (rcon_exec "data get entity $who Dimension" 2>&1 | string join ' ')
+            set -l dim overworld
+            string match -q '*the_nether*' -- $dimraw; and set dim nether
+            string match -q '*the_end*' -- $dimraw; and set dim end
+            echo $dim $x $y $z $dir
             return 0
         end
         test "$attempt" -lt 3; and sleep 1
@@ -949,6 +1033,14 @@ function preview_cat --argument-names cat
             echo '- centers on spawn, given coords, or a live player position'
             echo '- FOLLOW: a Chromium window that tracks a player every 10s'
             echo '- needs the version tag (platform) from [settings]'
+        case '[rail builder]'
+            echo 'build surface/air railroads from where you stand:'
+            echo '- reads your position + facing over RCON'
+            echo '- always-powered lines, width 1 or 3, your stone palette + line color'
+            echo '- compiles to fill/setblock, streamed over RCON (preview/run/copy/save)'
+            echo '- "materials / corner kit" gives the rails, redstone + deck blocks'
+            echo
+            echo 'saved lines live in '$CFGDIR/rail/' (also: mc-tui rail <compile|run> file.yml)'
         case '[settings]'
             load_conf
             echo "host      $HOST"
@@ -1235,6 +1327,245 @@ function command_view --argument-names cat
     end
 end
 
+# --- railroad builder ---------------------------------------------------------
+# Compile a railroad YAML definition (see plans/railroad-builder.md) into
+# commands via scripts/railroad.py, and for `run` stream them over RCON. An
+# optional trailing player resolves `from: player` / `dir: auto` from their live
+# pose (position + facing).
+
+function rail_script
+    echo (path dirname -- (path dirname -- $SELF))/scripts/railroad.py
+end
+
+function rail_cli # <compile|run|validate> <file.yml> [player]
+    set -l sub $argv[1]
+    set -l file $argv[2]
+    set -l who $argv[3]
+    test -n "$sub" -a -n "$file"; or _die 'usage: mc-tui rail compile|run|validate <file.yml> [player]'
+    type -q uv; or _die 'uv is required for the railroad compiler (mise install)'
+    set -l script (rail_script)
+    test -f $script; or _die "railroad.py not found at $script"
+
+    # resolve a live pose only when a player is named (for from:player / dir:auto)
+    set -l poseargs
+    if test -n "$who"
+        # player_pose echoes one space-separated line; fish command substitution
+        # splits on newlines, so split the fields out explicitly.
+        set -l pose (player_pose $who | string split ' ')
+        test (count $pose) -ge 5; or _die "could not read $who's pose (online?)"
+        set poseargs --pose "$pose[2] $pose[3] $pose[4] $pose[5]"
+    end
+
+    switch $sub
+        case compile
+            uv run --quiet $script compile $poseargs -- $file
+        case validate
+            uv run --quiet $script validate $poseargs -- $file
+        case run
+            set -l cmds (uv run --quiet $script compile $poseargs -- $file)
+            or _die 'compile failed (see message above)'
+            test (count $cmds) -gt 0; or _die 'no commands generated'
+            test (server_status) != down; or _die 'server offline — not sending'
+            printf '%s\n' $cmds
+            echo (set_color -d)'-- sending '(count $cmds)' command(s) over RCON --'(set_color normal)
+            rcon_exec_many $cmds
+        case '*'
+            _die "unknown rail subcommand: $sub (use compile|run|validate)"
+    end
+end
+
+# deck materials — the aesthetically pleasing polished/brick variants
+function rail_deck_palette
+    printf '%s\n' polished_andesite polished_diorite polished_granite \
+        stone_bricks smooth_stone deepslate_bricks deepslate_tiles \
+        polished_deepslate polished_blackstone_bricks bricks \
+        smooth_sandstone smooth_quartz
+end
+
+# subway-style line colors (the under-rail stripe)
+function rail_color_palette
+    printf '%s\n' none white_concrete light_gray_concrete gray_concrete \
+        black_concrete red_concrete orange_concrete yellow_concrete lime_concrete \
+        green_concrete light_blue_concrete cyan_concrete blue_concrete \
+        purple_concrete magenta_concrete pink_concrete brown_concrete
+end
+
+# side-barrier blocks (or none/open)
+function rail_wall_palette
+    printf '%s\n' none glass tinted_glass iron_bars oak_fence \
+        stone_brick_wall deepslate_brick_wall polished_blackstone_brick_wall
+end
+
+function rail_delta --argument-names dir # echoes "dx dz" for a cardinal
+    switch $dir
+        case north
+            echo '0 -1'
+        case south
+            echo '0 1'
+        case east
+            echo '1 0'
+        case west
+            echo '-1 0'
+    end
+end
+
+# fixed-choice picker that also accepts a typed custom value (like pick_item)
+function rail_pick # <prompt> <header> <option...>
+    set -l out (printf '%s\n' $argv[3..] | fzf --reverse --height 55% --print-query \
+            --prompt "$argv[1]> " --header "$argv[2]")
+    test -z "$out[-1]"; and return 1
+    echo $out[-1]
+end
+
+# preview the compiled commands for a definition file, then run / copy / save
+function rail_action_menu # <yaml-file> <id>
+    set -l file $argv[1]
+    set -l id $argv[2]
+    set -l script (rail_script)
+    set -l err (mktemp /tmp/mc-tui-rail-err.XXXXXX)
+    while true
+        set -l cmds (uv run --quiet $script compile $file 2>$err)
+        if test $status -ne 0
+            echo 'compile failed:'
+            cat $err
+            pause
+            rm -f $err
+            return
+        end
+        set -l n (count $cmds)
+        echo "── $id: $n command(s) ──"
+        printf '%s\n' $cmds | head -18
+        test $n -gt 18; and echo "  … (+"(math "$n - 18")" more)"
+        set -l choice (printf '%s\n' \
+                'run over RCON' 'copy to clipboard' 'save as YAML' 'cancel' | \
+            fzf --reverse --height 40% --prompt 'rail action> ' \
+                --header (status_line)\n"$id — $n command(s)")
+        switch "$choice"
+            case 'run*'
+                if test (server_status) = down
+                    echo 'server offline — not sending ([status] to re-check)'
+                else
+                    rcon_exec_many $cmds
+                end
+                pause
+                rm -f $err
+                return
+            case 'copy*'
+                clip (string join \n -- $cmds)
+                pause
+            case 'save*'
+                mkdir -p $CFGDIR/rail
+                cp $file $CFGDIR/rail/$id.yml
+                echo "saved: $CFGDIR/rail/$id.yml"
+                pause
+            case '*'
+                rm -f $err
+                return
+        end
+    end
+end
+
+# the build-a-line wizard: read the player's pose, collect choices, write a
+# concrete (reproducible) YAML and hand it to the action menu.
+function rail_build_line
+    type -q uv; or begin
+        echo 'uv is required for the railroad compiler (mise install)'
+        pause
+        return
+    end
+    set -l who (pick_player player); or return
+    set -l pose (player_pose $who | string split ' ')
+    if test (count $pose) -lt 5
+        echo "couldn't read $who's position/facing — online? (try again in a moment)"
+        pause
+        return
+    end
+    set -l dim $pose[1]
+    set -l px $pose[2]
+    set -l py $pose[3]
+    set -l pz $pose[4]
+    set -l facing $pose[5]
+    echo "$who is at $px $py $pz in the $dim, facing $facing"
+
+    set -l dirs $facing
+    for d in north south east west
+        test $d != $facing; and set -a dirs $d
+    end
+    set -l dir (rail_pick direction "build direction (detected: $facing) — esc cancels" $dirs); or return
+
+    set -l off (fzf_input 'height offset' 'blocks above your feet — 0 = at your level' 0 5 10 20 -5)
+    test -n "$off"; or set off 0
+    set -l width (rail_pick width 'deck width — 3 (platform) or 1 (minimal)' 3 1); or return
+    set -l len (fzf_input length 'rails to lay — pick or type a number' 16 32 64 128 256 8); or return
+    set -l deck (rail_pick deck 'deck material (polished/brick) — or type any block' (rail_deck_palette)); or return
+    set -l color (rail_pick 'line color' 'subway stripe under the rail — none for plain' (rail_color_palette))
+    or set color none
+    set -l walls (rail_pick walls 'side barrier — none, or pick/type a block' (rail_wall_palette))
+    or set walls none
+    set -l name (fzf_input 'line name' 'a label for this line (used as the saved filename)' "$dir line")
+    test -n "$name"; or set name "$dir line"
+
+    # concrete start: one block ahead of the player in `dir`, at feet + offset
+    set -l d (rail_delta $dir | string split ' ')
+    set -l sx (math "$px + $d[1]")
+    set -l sy (math "$py + $off")
+    set -l sz (math "$pz + $d[2]")
+    set -l id (string lower -- "$name" | string replace -ra '[^a-z0-9]+' '-' | string trim -c '-')
+    test -n "$id"; or set id line
+
+    set -l tmp (mktemp /tmp/mc-tui-rail.XXXXXX.yml)
+    begin
+        set -l colorpart ''
+        test "$color" != none; and set colorpart ", color: $color"
+        echo "line: {id: $id$colorpart}"
+        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9}"
+        echo 'segments:'
+        echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len}"
+    end >$tmp
+    rail_action_menu $tmp $id
+end
+
+function rail_load_line
+    type -q uv; or begin
+        echo 'uv is required for the railroad compiler (mise install)'
+        pause
+        return
+    end
+    set -l files (ls $CFGDIR/rail/*.yml 2>/dev/null)
+    if test (count $files) -eq 0
+        echo "no saved lines yet (build one and choose 'save as YAML')"
+        pause
+        return
+    end
+    set -l pick (printf '%s\n' $files | fzf --reverse --height 50% \
+        --prompt 'load> ' --header 'saved lines — esc back')
+    test -n "$pick"; or return
+    set -l id (string replace -r '.*/' '' -- $pick | string replace -r '\.yml$' '')
+    rail_action_menu $pick $id
+end
+
+function railroad_view
+    while true
+        set -l hdr (status_line)\n'railroad builder — powered lines + kits, built from where you stand'
+        set -l choice (printf '%s\n' \
+                'build a line' \
+                'load a saved line' \
+                'materials / corner kit' \
+                back | \
+            fzf --reverse --height 50% --prompt 'railroad> ' --header $hdr)
+        switch "$choice"
+            case 'build*'
+                rail_build_line
+            case 'load*'
+                rail_load_line
+            case 'materials*'
+                command_view railroad
+            case '*'
+                return
+        end
+    end
+end
+
 function main
     command -v fzf >/dev/null; or _die 'fzf is required'
     while true
@@ -1248,6 +1579,7 @@ function main
                 printf '%-18s \033[36m%s\033[0m\n' \
                     '[console]' 'interactive RCON session (nmcrcon / mcrcon -t)' \
                     '[map]' 'open the world on chunkbase (seed / player position)' \
+                    '[rail builder]' 'build powered rail lines from where you stand' \
                     '[players]' 'saved names for <player> slots' \
                     '[status]' 're-check the server connection now' \
                     '[settings]' 'RCON host / port / password'
@@ -1268,6 +1600,8 @@ function main
                 status_refresh >/dev/null
             case '[map]'
                 map_view
+            case '[rail builder]'
+                railroad_view
             case '[players]'
                 players_view
             case '[settings]'
@@ -1346,6 +1680,10 @@ end
 # mc-tui map [player]            open the world on chunkbase (centered on player)
 # mc-tui follow [player] [secs]  live map: chromium tab re-centered every N s
 #                                (no player: pick from who's online, ask interval)
+# mc-tui rail <compile|run|validate> <file.yml> [player]
+#                                railroad: compile a YAML line to commands, run it
+#                                over RCON, or validate it; [player] resolves
+#                                from:player / dir:auto from their live pose
 # mc-tui status [--raw]          server reachability (cached); --raw: just up/down/...
 
 switch "$argv[1]"
@@ -1362,6 +1700,9 @@ switch "$argv[1]"
     case run
         test (count $argv) -ge 2; or _die 'usage: mc-tui run <command...>'
         rcon_exec (string join ' ' -- $argv[2..])
+    case rail # railroad builder: compile|run|validate a YAML line definition
+        load_conf
+        rail_cli $argv[2..]
     case session
         term_session $argv[2]
     case map
@@ -1384,6 +1725,9 @@ switch "$argv[1]"
     case __loc # machine-readable "dim x z" for a player (for follow-map.py)
         load_conf
         player_loc $argv[2]
+    case __pose # machine-readable "dim x y z dir" for a player (railroad builder)
+        load_conf
+        player_pose $argv[2]
     case __seed # machine-readable seed (for follow-map.py)
         load_conf
         world_seed
