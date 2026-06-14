@@ -35,12 +35,12 @@ You get a **preview** of the commands, then **run over RCON**, **copy** them, or
 
 ## Kept at top speed
 
-The track is mostly plain `rail`, with a **booster** every **9 blocks** — a
+The track is mostly plain `rail`, with a **booster** every **8 blocks** — a
 `powered_rail` sitting on its own `redstone_block` tucked into the deck. Each
 booster powers itself, and the plain rails between simply coast, so the line
 uses very little gold and there are never any *unpowered* powered-rails to brake
-the cart. A booster every 9 blocks keeps a minecart pinned at top speed on the
-flat (it's conservative — boosters carry a cart much farther than that). Just
+the cart. A booster every 8 blocks keeps a minecart pinned at top speed on the
+flat and lines the boosters up with the even length presets (8/16/32…). Just
 drop a minecart on the line and ride.
 
 ## Lighting
@@ -166,7 +166,7 @@ defaults:
   width: 3
   deck: polished_andesite    # prefer polished/brick variants
   walls: glass
-  power_spacing: 9           # booster every N blocks (9 is conservative)
+  power_spacing: 8           # booster every N blocks (aligns with the presets)
   light: lantern             # none | lantern | sea_lantern | glowstone | …
   light_style: pole          # pole | edge
   light_spacing: 8

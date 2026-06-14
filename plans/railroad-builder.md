@@ -47,7 +47,7 @@ Everything below was discussed and agreed before implementation:
 | Length | free value, with presets **8 / 16 / 32 / 64 / 128 / 256** (powers of two tile cleanly) |
 | Deck width | prompt **1 or 3** per build |
 | Line color | **under-rail stripe** (center column); width-3 edges keep the stone palette |
-| Power | plain `rail` with a `powered_rail` + `redstone_block` **booster** every `power_spacing` (default **9**); each booster is powered on its own, no relay — see §3 |
+| Power | plain `rail` with a `powered_rail` + `redstone_block` **booster** every `power_spacing` (default **8**, aligned to the length presets); each booster is powered on its own, no relay — see §3 |
 | Lighting | optional — a `light` block on **poles** (lamp posts), the deck **edge**, or the base **side** (hanging under the edge), every `light_spacing` (default 8); any block light stops mob spawns |
 | End stop | optional `end_stop` buffer block past the last rail (stops a runaway cart); overwritten when you continue the line — for laying long runs in chunks |
 | Stations | **parametric** (generated commands, not binary structures); two designs: **simple halt** + **covered stop** |
@@ -84,8 +84,9 @@ The facts the generator depends on:
     leaned on the relay (≤ 8 each way), which forced spacing = 9 and was both
     gold-hungry and fragile (any unpowered powered-rail braked). Switching to
     plain-rail-plus-boosters removed the relay dependency and the brake risk.
-- **Speed:** boosters every 9 blocks keep an occupied cart pinned at top speed
-  (8 m/s) on flat ground, using a fraction of the gold.
+- **Speed:** boosters every 8 blocks keep an occupied cart pinned at top speed
+  (8 m/s) on flat ground, using a fraction of the gold, and align with the
+  even-step length presets.
 
 ### Facing detection
 
@@ -169,7 +170,7 @@ defaults:                   # applied to every segment unless overridden
   deck: polished_andesite   # deck block — prefer polished/brick variants
   walls: glass              # none | open | <block id>  (open = accent edges, no barrier)
   wall_height: 1            # 1 or 2 (only when walls is a block)
-  power_spacing: 9          # booster (powered_rail+redstone) every N rails (see §3)
+  power_spacing: 8          # booster (powered_rail+redstone) every N rails (see §3)
   light: lantern            # none | <light block>  (lantern, sea_lantern, glowstone…)
   light_style: pole         # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
   light_spacing: 8          # blocks between lights — <=24 stops all mob spawns
@@ -205,8 +206,9 @@ stations:
   `stone_brick_wall`) placed on the two edge columns from rail level up
   `wall_height` blocks. With width 1 the barrier floats immediately beside the rail.
 - `power_spacing`: blocks between boosters (a `powered_rail` on a `redstone_block`
-  amid plain rail). Default **9** is conservative; since each booster is powered
-  independently (no relay) it can safely be larger to save gold (§3).
+  amid plain rail). Default **8**, which aligns boosters with the even-step
+  length presets; since each booster is powered independently (no relay) it can
+  safely be larger to save gold (§3).
 - `light`: `none`, or a light block id (`lantern`, `sea_lantern`, `glowstone`,
   `end_rod`, …). When set, lights are placed every `light_spacing`.
 - `light_style`: `pole` (a 3-tall post just beyond the deck edge with the light
@@ -251,7 +253,7 @@ split into sequential chunks along the direction axis.
 ### Worked example
 
 Player at ≈ `(119, 64, −30)` facing **east**, width 3, deck diorite, color
-`blue_concrete`, glass walls, length 128, `power_spacing` 9. Deck Y = 63, rail Y
+`blue_concrete`, glass walls, length 128, `power_spacing` 8. Deck Y = 63, rail Y
 = 64, start x = 120, center z = −30, run east to x = 247.
 
 ```
@@ -260,11 +262,11 @@ fill 120 63 -31 247 63 -31 minecraft:diorite          # deck edge
 fill 120 63 -29 247 63 -29 minecraft:diorite          # deck edge
 fill 120 63 -30 247 63 -30 minecraft:blue_concrete    # under-rail stripe
 fill 120 64 -30 247 64 -30 minecraft:rail[shape=east_west]   # plain track
-setblock 120 63 -30 minecraft:redstone_block          # booster every 9 …
+setblock 120 63 -30 minecraft:redstone_block          # booster every 8 …
 setblock 120 64 -30 minecraft:powered_rail[shape=east_west]
-setblock 129 63 -30 minecraft:redstone_block
-setblock 129 64 -30 minecraft:powered_rail[shape=east_west]
-# … through x=246  (15 boosters for 128 length)
+setblock 128 63 -30 minecraft:redstone_block
+setblock 128 64 -30 minecraft:powered_rail[shape=east_west]
+# … through x=240  (16 boosters for 128 length)
 fill 120 64 -31 247 64 -31 minecraft:glass            # wall
 fill 120 64 -29 247 64 -29 minecraft:glass            # wall
 ```

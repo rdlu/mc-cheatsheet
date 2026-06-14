@@ -220,7 +220,7 @@ function rail_build_line
         set -l estoppart ''
         test "$estop" != none; and set estoppart ", end_stop: $estop"
         echo "line: {id: $id$colorpart}"
-        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9$lightpart$estoppart}"
+        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 8$lightpart$estoppart}"
         echo 'segments:'
         echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len}"
     end >$tmp
@@ -274,7 +274,7 @@ function rail_build_station
         set -l colorpart ''
         test "$color" != none; and set colorpart ", color: $color"
         echo "line: {id: $id$colorpart}"
-        echo "defaults: {width: 1, deck: $deck, power_spacing: 9}"
+        echo "defaults: {width: 1, deck: $deck, power_spacing: 8}"
         echo 'segments:'
         echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: 1}"
         echo 'stations:'
@@ -329,7 +329,7 @@ function rail_build_junction
     set -l tmp (mktemp /tmp/mc-tui-rail.XXXXXX.yml)
     begin
         echo "line: {id: $id}"
-        echo "defaults: {width: 1, deck: $deck, power_spacing: 9}"
+        echo "defaults: {width: 1, deck: $deck, power_spacing: 8}"
         echo 'segments:'
         echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: 1}"
         echo 'junctions:'

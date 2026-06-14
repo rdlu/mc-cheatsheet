@@ -41,7 +41,7 @@ DEFAULTS = {
     "deck": "polished_andesite",  # deck block — prefer polished/brick variants
     "walls": "none",     # none | open | <block id> (e.g. glass, oak_fence)
     "wall_height": 1,    # 1 or 2, only when walls is a block
-    "power_spacing": 9,  # redstone_block under the rail every N blocks; see below
+    "power_spacing": 8,  # booster every N blocks; 8 aligns with the length presets
     "light": "none",     # none | <light block id> (e.g. lantern, sea_lantern)
     "light_style": "pole",   # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
     "light_spacing": 8,  # blocks between lights; <=24 stops all mob spawns
@@ -142,7 +142,8 @@ def generate_segment(seg, color):
     # (no powered-rail relay), and the plain rails between simply coast — so the
     # line is mostly cheap rail and there are never any unpowered powered-rails
     # acting as brakes. A booster every `spacing` blocks keeps a cart pinned at
-    # top speed on the flat; 9 is conservative (boosters carry much farther).
+    # top speed on the flat; 8 (the default) aligns boosters with the even-step
+    # length presets — and boosters carry a ridden cart much farther anyway.
     for i in range(0, length, spacing):
         cmds.append(setblock(sx + dx * i, dy, sz + dz * i, "redstone_block"))
         cmds.append(setblock(sx + dx * i, ry, sz + dz * i,
