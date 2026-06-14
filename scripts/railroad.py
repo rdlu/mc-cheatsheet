@@ -117,9 +117,10 @@ def generate_slope(seg, color):
     """Return (commands, end_block) for a sloped segment (grade up/down).
 
     Rails ascend one block per step (`ascending_*` shapes). A cart bleeds speed
-    going uphill, so boosters sit closer than on the flat: a `powered_rail` every
-    `slope_spacing` steps (4, or 2 on the short ramps), plain ascending rails
-    coasting between. Supports are plain deck; width-3 adds stepped side decks.
+    going uphill, so boosts are both close and strong: **two powered rails in a
+    row** every `slope_spacing` steps (4, or 2 on the short ramps — which makes a
+    short ramp fully powered), plain ascending rails coasting between. Supports
+    are plain deck; width-3 adds stepped side decks.
 
     Powering an ascending rail is the catch: a redstone block right *below* it
     does nothing — it must sit on the rail's **high side**, one step up-slope at
@@ -147,7 +148,7 @@ def generate_slope(seg, color):
     boosters = []
     for i in range(length):
         x, y, z = sx + dx * i, sy + g * i, sz + dz * i
-        boost = (i % spacing == 0)
+        boost = (i % spacing) in (0, 1)   # two powered rails in a row per boost
         for o in range(-half, half + 1):
             blk = (color or deck) if o == 0 else deck
             cmds.append(setblock(x + px * o, y - 1, z + pz * o, blk))
