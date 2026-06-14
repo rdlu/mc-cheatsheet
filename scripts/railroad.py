@@ -47,6 +47,7 @@ DEFAULTS = {
     "light_spacing": 8,  # blocks between lights; <=24 stops all mob spawns
     "light_side": "both",  # both | left | right
     "end_stop": "none",  # none | <block>: a buffer one past the last rail (cart stop)
+    "grade": "flat",     # flat | up | down — a sloped (ascending) ramp
 }
 
 
@@ -100,12 +101,84 @@ def setblock(x, y, z, block):
 
 # --- geometry ----------------------------------------------------------------
 
+OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
+
+
+def slope_spacing(length, override=None):
+    """Booster spacing for a ramp of `length` steps. Climbing eats speed, so
+    slopes are powered tighter than flat lines: every 4 steps, and every 2 on
+    the short ramps (length 4 and 8) which have no run-up to climb on."""
+    if override:
+        return max(1, int(override))
+    return 2 if length <= 8 else 4
+
+
+def generate_slope(seg, color):
+    """Return (commands, end_block) for a sloped segment (grade up/down).
+
+    Rails ascend one block per step (`ascending_*` shapes). A cart bleeds speed
+    going uphill, so boosters sit closer than on the flat: a `powered_rail` every
+    `slope_spacing` steps (4, or 2 on the short ramps), plain ascending rails
+    coasting between. Supports are plain deck; width-3 adds stepped side decks.
+
+    Powering an ascending rail is the catch: a redstone block right *below* it
+    does nothing — it must sit on the rail's **high side**, one step up-slope at
+    the rail's own height (verified live; this is the hand-built example's
+    geometry). And sloped rails don't settle shape/power on the first `setblock`
+    (their upper neighbour isn't placed yet), so after laying the redstone a
+    refresh pass re-places every rail to settle shapes and pick up the power.
+    """
+    direction = seg["dir"]
+    dx, dz = DIRS[direction]
+    px, pz = (-dz, dx)
+    sx, sy, sz = seg["from"]          # from.y = rail level of the first step
+    g = seg["g"]                      # +1 up, -1 down
+    length = seg["length"]
+    width = seg["width"]
+    deck = seg["deck"]
+    half = width // 2
+    asc = direction if g > 0 else OPPOSITE[direction]
+    adx, adz = DIRS[asc]             # the up-slope (high) direction
+    shape = f"ascending_{asc}"
+    spacing = slope_spacing(length, seg.get("slope_power"))
+
+    cmds = []
+    rails = []
+    boosters = []
+    for i in range(length):
+        x, y, z = sx + dx * i, sy + g * i, sz + dz * i
+        boost = (i % spacing == 0)
+        for o in range(-half, half + 1):
+            blk = (color or deck) if o == 0 else deck
+            cmds.append(setblock(x + px * o, y - 1, z + pz * o, blk))
+        rail = "powered_rail" if boost else "rail"
+        cmds.append(setblock(x, y, z, f"{rail}[shape={shape}]"))
+        rails.append((x, y, z, rail))
+        if boost:
+            boosters.append((x, y, z))
+    # power each booster from its high side: a redstone block one step up-slope
+    # at the rail's height (it doubles as the next/prev step's support).
+    for x, y, z in boosters:
+        cmds.append(setblock(x + adx, y, z + adz, "redstone_block"))
+    # refresh: a *fresh* placement (air -> rail) is what makes an ascending
+    # powered rail latch onto the redstone beside it — re-placing the existing
+    # block doesn't (only a from-air placement re-evaluates the power). Verified.
+    for x, y, z, rail in rails:
+        cmds.append(setblock(x, y, z, "air"))
+        cmds.append(setblock(x, y, z, f"{rail}[shape={shape}]"))
+    end_block = [sx + dx * (length - 1), sy + g * (length - 1),
+                 sz + dz * (length - 1)]
+    return cmds, end_block
+
+
 def generate_segment(seg, color):
     """Return (commands, end_block) for one resolved segment.
 
     `seg` has concrete `from`/`dir`/`length` and merged defaults. `end_block` is
     the segment's last rail coordinate, used for `from: end` chaining.
     """
+    if seg.get("g", 0):              # grade up/down -> a sloped ramp
+        return generate_slope(seg, color)
     direction = seg["dir"]
     dx, dz = DIRS[direction]
     px, pz = (-dz, dx)               # perpendicular unit (the "side" axis)
@@ -493,9 +566,23 @@ def resolve(data, pose=None):
         if m["light_spacing"] < 1:
             raise RailError(f"segment {idx}: `light_spacing` must be >= 1")
 
+        grade = str(m.get("grade", "flat")).strip().lower()
+        if grade in ("up", "ascend", "ascending", "rise"):
+            m["g"] = 1
+        elif grade in ("down", "descend", "descending", "drop"):
+            m["g"] = -1
+        elif grade in ("flat", "level", "none", ""):
+            m["g"] = 0
+        else:
+            raise RailError(f"segment {idx}: `grade` must be up, down or flat")
+
         out.append(m)
         dx, dz = DIRS[m["dir"]]
-        prev_end = [m["from"][0] + dx * (m["length"] - 1), m["from"][1],
+        # x/z: the last rail (length-1 ahead). y: a cart leaves the top of a ramp
+        # one step higher than the last rail, so a `from: end` continuation lands
+        # at from.y + grade*length (= flat for g=0).
+        prev_end = [m["from"][0] + dx * (m["length"] - 1),
+                    m["from"][1] + m["g"] * m["length"],
                     m["from"][2] + dz * (m["length"] - 1)]
     return out, color
 

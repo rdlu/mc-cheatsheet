@@ -33,6 +33,31 @@ walks you through it:
 You get a **preview** of the commands, then **run over RCON**, **copy** them, or
 **save as YAML** to `~/.config/mc-tui/rail/`.
 
+## Going up and down (ramps)
+
+`build a line` asks **flat / up / down**. A ramp climbs or drops **one block per
+step** on ascending rails, with its own length presets **4 / 8 / 12 / 16 / 24 /
+32** (= blocks climbed). Climbing eats a cart's speed, so ramps are powered
+tighter than flat track — a booster every **4** steps, every **2** on the short
+4- and 8-length ramps ("more energy to climb"). The catch a hand-builder learns:
+on a slope the booster's `redstone_block` goes on the rail's **high side** (one
+step up-slope, at the rail's height), *not* directly below it — below does
+nothing to an ascending rail.
+
+Chain a ramp between flat segments to climb to a new level and keep going:
+
+```yaml
+segments:
+  - { from: [100, 64, -30], dir: east, length: 32 }            # flat
+  - { from: end, dir: east, length: 16, grade: up }            # climb 16
+  - { from: end, dir: east, length: 32 }                       # flat, 16 higher
+```
+
+!!! note "Ride it — don't push an empty cart up"
+    A ramp is tuned for a cart with **you** (or cargo) in it; an empty cart has
+    little inertia and may stall partway up a long climb. If a cart loses steam
+    it just rolls back down to the bottom — it won't fall off.
+
 ## Kept at top speed
 
 The track is mostly plain `rail`, with a **booster** every **8 blocks** — a

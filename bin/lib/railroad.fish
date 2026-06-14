@@ -169,38 +169,50 @@ function rail_build_line
         test $d != $facing; and set -a dirs $d
     end
     set -l dir (rail_pick direction "build direction (detected: $facing) — esc cancels" $dirs); or return
+    set -l grade (rail_pick grade 'flat line, or a ramp going up / down (1 block per step)' flat up down); or return
+    test -n "$grade"; or set grade flat
 
     set -l off (fzf_input 'height offset' 'blocks above your feet — 0 = at your level' 0 5 10 20 -5)
     test -n "$off"; or set off 0
     set -l width (rail_pick width 'deck width — 3 (platform) or 1 (minimal)' 3 1); or return
-    set -l len (fzf_input length 'rails to lay — pick or type a number' 16 32 64 128 256 8); or return
+    set -l len
+    if test "$grade" = flat
+        set len (fzf_input length 'rails to lay — pick or type a number' 16 32 64 128 256 8); or return
+    else
+        set len (fzf_input length 'ramp length (= blocks climbed) — pick or type' 8 4 12 16 24 32); or return
+    end
     set -l deck (rail_pick deck 'deck material (polished/brick) — or type any block' (rail_deck_palette)); or return
     set -l color (rail_pick 'line color' 'subway stripe under the rail — none for plain' (rail_color_palette))
     or set color none
-    set -l walls (rail_pick walls 'side barrier — none, or pick/type a block' (rail_wall_palette))
-    or set walls none
-    set -l lchoice (rail_pick lighting 'track lighting (stops mob spawns) — esc/none = off' none 'poles' 'edge' 'sides of base')
-    or set lchoice none
+    # walls / lighting / end-stop apply to flat lines only (a ramp is just track)
+    set -l walls none
     set -l light none
     set -l lstyle pole
     set -l lspace 8
-    if test "$lchoice" != none
-        switch "$lchoice"
-            case 'edge'
-                set lstyle edge
-            case 'sides*'
-                set lstyle side
-            case '*'
-                set lstyle pole
+    set -l estop none
+    if test "$grade" = flat
+        set walls (rail_pick walls 'side barrier — none, or pick/type a block' (rail_wall_palette))
+        or set walls none
+        set -l lchoice (rail_pick lighting 'track lighting (stops mob spawns) — esc/none = off' none 'poles' 'edge' 'sides of base')
+        or set lchoice none
+        if test "$lchoice" != none
+            switch "$lchoice"
+                case 'edge'
+                    set lstyle edge
+                case 'sides*'
+                    set lstyle side
+                case '*'
+                    set lstyle pole
+            end
+            set light (rail_pick 'light block' 'the light source — or type any block' (rail_light_palette))
+            or set light lantern
+            set lspace (fzf_input 'light spacing' 'blocks between lights — <=24 stops all spawns' 8 6 12 16)
+            test -n "$lspace"; or set lspace 8
         end
-        set light (rail_pick 'light block' 'the light source — or type any block' (rail_light_palette))
-        or set light lantern
-        set lspace (fzf_input 'light spacing' 'blocks between lights — <=24 stops all spawns' 8 6 12 16)
-        test -n "$lspace"; or set lspace 8
+        set estop (rail_pick 'end stop' 'buffer at the far end so the cart cant fly off — esc/none = off' red_concrete none red_wool deepslate_tiles)
+        or set estop none
     end
-    set -l estop (rail_pick 'end stop' 'buffer at the far end so the cart cant fly off — esc/none = off' red_concrete none red_wool deepslate_tiles)
-    or set estop none
-    set -l name (fzf_input 'line name' 'a label for this line (used as the saved filename)' "$dir line")
+    set -l name (fzf_input 'line name' 'a label for this line (used as the saved filename)' "$dir $grade line")
     test -n "$name"; or set name "$dir line"
 
     # concrete start: one block ahead of the player in `dir`, at feet + offset
@@ -219,10 +231,12 @@ function rail_build_line
         test "$light" != none; and set lightpart ", light: $light, light_style: $lstyle, light_spacing: $lspace"
         set -l estoppart ''
         test "$estop" != none; and set estoppart ", end_stop: $estop"
+        set -l gradepart ''
+        test "$grade" != flat; and set gradepart ", grade: $grade"
         echo "line: {id: $id$colorpart}"
         echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 8$lightpart$estoppart}"
         echo 'segments:'
-        echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len}"
+        echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len$gradepart}"
     end >$tmp
     rail_action_menu $tmp $id
 end
