@@ -306,8 +306,20 @@ platform corners and a line-colour marker block on the far edge.
 The halt, plus a 3-wide roof two blocks up, four corner pillars, and two
 `lantern[hanging=true]` under the roof.
 
-Both are `fill`/`setblock` only — hand-editable, no binary `.nbt`, and they take
-the line's deck material and colour.
+### Terminus (dead-end buffer)
+
+For the **end** of a line. A halt/covered station has a *forward* departure
+`powered_rail`; at a line's end that flings an overshooting or relaunched cart
+off the edge (hit live — a ridden cart's momentum carried past the brake and the
+departure rail launched it into the void). The terminus removes the forward rail
+entirely: approach coasts in to an unpowered `powered_rail` brake, then a
+**3-wide × 2-high wall one block ahead** stops the cart dead and walls off the
+platform edge. The lever still launches — but with the wall on the far side the
+cart departs **backwards**, the way it came. Verified live: a Motion 0.8 cart
+(double max speed) stopped at the brake against the wall, nothing escaped.
+
+All three are `fill`/`setblock` only — hand-editable, no binary `.nbt`, and they
+take the line's deck material and colour.
 
 ---
 

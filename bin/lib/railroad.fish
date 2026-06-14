@@ -253,7 +253,7 @@ function rail_build_station
         test $d != $facing; and set -a dirs $d
     end
     set -l dir (rail_pick direction "build direction (detected: $facing) — esc cancels" $dirs); or return
-    set -l type (rail_pick 'station type' 'halt = open stop · covered = roof + hanging lights' halt covered); or return
+    set -l type (rail_pick 'station type' 'halt = open · covered = roofed · terminus = dead-end buffer at a line end' halt covered terminus); or return
     set -l off (fzf_input 'height offset' 'blocks above your feet — 0 = at your level' 0 5 10 20)
     test -n "$off"; or set off 0
     set -l deck (rail_pick deck 'platform material (polished/brick) — or type any block' (rail_deck_palette)); or return

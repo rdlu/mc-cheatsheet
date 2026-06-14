@@ -267,6 +267,49 @@ def generate_station(anchor, direction, deck, color, kind):
     return cmds
 
 
+def generate_terminus(anchor, direction, deck, color):
+    """A buffer-stop end-of-line, centred so the cart halts at `anchor`.
+
+    Unlike a station (which has a *forward* departure rail and would fling an
+    overshooting or relaunched cart off the end), a terminus is a dead end: an
+    unpowered powered-rail brake at the stop, then a **2-high wall** one block
+    ahead that physically stops the cart and blocks the platform edge so you
+    can't ride or walk off. The brake doubles as a launcher — flip the lever and,
+    because the wall is on its far side, the cart departs *backwards*, the way it
+    came. `direction` is the travel direction arriving at the stop.
+    """
+    ax, ay, az = anchor
+    dx, dz = DIRS[direction]
+    rx, rz = (-dz, dx)                         # "right" relative to travel
+    shape = "east_west" if dx else "north_south"
+
+    def w(f, r, u):                            # forward/right/up -> world x,y,z
+        return (ax + f * dx + r * rx, ay + u, az + f * dz + r * rz)
+
+    cmds = []
+    # platform floor: 4 (forward) x 3 (sideways), one below rail level
+    cmds.append(fill(*w(-3, -1, -1), *w(0, 1, -1), deck))
+    # approach coasts in from the line; the stop is an unpowered powered-rail
+    # brake — no redstone under it, so it holds the cart until the lever fires
+    for f in (-3, -2, -1):
+        cmds.append(setblock(*w(f, 0, 0), f"rail[shape={shape}]"))
+    cmds.append(setblock(*w(0, 0, 0), f"powered_rail[shape={shape}]"))   # brake
+    # buffer wall one block ahead: 3 wide, 2 high, on its own deck footing. It
+    # stops the cart dead and walls off the end of the platform.
+    cmds.append(fill(*w(1, -1, -1), *w(1, 1, -1), deck))
+    cmds.append(fill(*w(1, -1, 0), *w(1, 1, 1), deck))
+    # lever on a post beside the brake — flipping it powers the brake rail, and
+    # with the wall ahead the cart launches back up the line.
+    cmds.append(setblock(*w(0, 1, 0), deck))
+    cmds.append(setblock(*w(0, 1, 1), "lever[face=floor]"))
+    # lighting + a colour marker
+    for f, r in ((-3, -1), (-3, 1), (0, -1)):
+        cmds.append(setblock(*w(f, r, 0), "lantern"))
+    if color:
+        cmds.append(setblock(*w(-1, 0, -1), color))
+    return cmds
+
+
 # --- junctions ---------------------------------------------------------------
 
 VEC2CARD = {(0, -1): "north", (0, 1): "south", (1, 0): "east", (-1, 0): "west"}
@@ -478,10 +521,14 @@ def compile_cmds(data, pose=None):
         if not isinstance(st, dict):
             raise RailError("each station must be a mapping")
         kind = str(st.get("type", "halt")).lower()
-        if kind not in ("halt", "covered"):
-            raise RailError(f"station type `{st.get('type')}` — use halt or covered")
+        if kind not in ("halt", "covered", "terminus"):
+            raise RailError(f"station type `{st.get('type')}` — "
+                            "use halt, covered or terminus")
         anchor, direction = station_anchor(st.get("at", "start"), segments)
-        cmds += generate_station(anchor, direction, deck, color, kind)
+        if kind == "terminus":
+            cmds += generate_terminus(anchor, direction, deck, color)
+        else:
+            cmds += generate_station(anchor, direction, deck, color, kind)
     # junctions: a switch that overlays the line (the junction rail replaces the
     # through rail at its anchor), with a branch stub peeling off to the side.
     for jn in (data.get("junctions") or []):
