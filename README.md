@@ -134,7 +134,9 @@ The docs site rebuilds and deploys to GitHub Pages on every push to `main`
 
 ```
 cheatsheet.typ          Typst source for the two-page PDF (Catppuccin themed)
-bin/mc-tui              the fish + fzf terminal app (RCON, pickers, maps)
+bin/mc-tui              entry point: globals + dispatch; sources bin/lib/*.fish
+bin/lib/*.fish          the fish + fzf app split into modules (data, rcon,
+                        status, world, players, pickers, views, railroad, …)
 scripts/follow-map.py   chromium + CDP driver for the live follow map
 scripts/railroad.py     YAML -> Minecraft commands compiler for the rail builder
 scripts/builder-data.py generates the web builder's data from the mc-tui tables
