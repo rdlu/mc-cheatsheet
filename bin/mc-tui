@@ -1396,6 +1396,12 @@ function rail_wall_palette
         stone_brick_wall deepslate_brick_wall polished_blackstone_brick_wall
 end
 
+# light sources for track lighting
+function rail_light_palette
+    printf '%s\n' lantern soul_lantern sea_lantern glowstone shroomlight \
+        end_rod redstone_lamp ochre_froglight
+end
+
 function rail_delta --argument-names dir # echoes "dx dz" for a cardinal
     switch $dir
         case north
@@ -1502,6 +1508,17 @@ function rail_build_line
     or set color none
     set -l walls (rail_pick walls 'side barrier — none, or pick/type a block' (rail_wall_palette))
     or set walls none
+    set -l lstyle (rail_pick lighting 'track lighting (stops mob spawns) — esc/none = off' none poles edge)
+    or set lstyle none
+    set -l light none
+    set -l lspace 8
+    if test "$lstyle" != none
+        test "$lstyle" = edge; or set lstyle pole
+        set light (rail_pick 'light block' 'the light source — or type any block' (rail_light_palette))
+        or set light lantern
+        set lspace (fzf_input 'light spacing' 'blocks between lights — <=24 stops all spawns' 8 6 12 16)
+        test -n "$lspace"; or set lspace 8
+    end
     set -l name (fzf_input 'line name' 'a label for this line (used as the saved filename)' "$dir line")
     test -n "$name"; or set name "$dir line"
 
@@ -1517,8 +1534,10 @@ function rail_build_line
     begin
         set -l colorpart ''
         test "$color" != none; and set colorpart ", color: $color"
+        set -l lightpart ''
+        test "$light" != none; and set lightpart ", light: $light, light_style: $lstyle, light_spacing: $lspace"
         echo "line: {id: $id$colorpart}"
-        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9}"
+        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9$lightpart}"
         echo 'segments:'
         echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len}"
     end >$tmp

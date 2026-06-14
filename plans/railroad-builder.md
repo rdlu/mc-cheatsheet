@@ -48,6 +48,7 @@ Everything below was discussed and agreed before implementation:
 | Deck width | prompt **1 or 3** per build |
 | Line color | **under-rail stripe** (center column); width-3 edges keep the stone palette |
 | Power | **always powered** — continuous `powered_rail` + `redstone_block` every `power_spacing` (default **9** = relay 8 + 1; see §3) |
+| Lighting | optional — a `light` block on **poles** (lamp posts) or the deck **edge**, every `light_spacing` (default 8); any block light stops mob spawns |
 | Stations | **parametric** (generated commands, not binary structures); two designs: **simple halt** + **covered stop** |
 | Corners | built **by hand**; a give-kit supplies the materials |
 | Compiler | **Python via `uv`** — single geometry engine; fish is the UI + RCON |
@@ -171,6 +172,10 @@ defaults:                   # applied to every segment unless overridden
   walls: glass              # none | open | <block id>  (open = accent edges, no barrier)
   wall_height: 1            # 1 or 2 (only when walls is a block)
   power_spacing: 9          # redstone_block every N rails — keep at 9 (see §3)
+  light: lantern            # none | <light block>  (lantern, sea_lantern, glowstone…)
+  light_style: pole         # pole (lamp posts) | edge (lanterns on the deck edge)
+  light_spacing: 8          # blocks between lights — <=24 stops all mob spawns
+  light_side: both          # both | left | right
 
 segments:
   - from: [120, 64, -30]    # explicit; or `from: player`, or `from: end`
@@ -202,6 +207,13 @@ stations:
   `wall_height` blocks. With width 1 the barrier floats immediately beside the rail.
 - `power_spacing`: blocks between `redstone_block`s under the rail. **Keep at 9**
   (§3 explains why other values stall or gap).
+- `light`: `none`, or a light block id (`lantern`, `sea_lantern`, `glowstone`,
+  `end_rod`, …). When set, lights are placed every `light_spacing`.
+- `light_style`: `pole` (a 3-tall post just beyond the deck edge with the light
+  on top — lamp posts) or `edge` (the light sitting on the deck edge).
+- `light_spacing`: blocks between lights (default 8). Since any block light > 0
+  stops hostile spawns, ≤ 24 keeps the whole track spawn-proof.
+- `light_side`: `both` / `left` / `right`.
 - `stations[].at`: `start`, `end`, an integer **offset along the line**, or
   explicit `[x,y,z]`.
 
@@ -218,8 +230,11 @@ block `D`, color `C`, walls — the generator emits, in order:
 3. **Rail**, at `sy+1`, offset 0, full length → `powered_rail[shape=<axis>]`
 4. **Power**, `setblock` `redstone_block` at `sy`, offset 0, every `power_spacing`
    blocks (overwrites the stripe at those points)
-5. **Walls** (if `walls ∈ {wall, glass}`), at `sy+1` (and `sy+2` if
-   `wall_height=2`), perpendicular offset ±1, full length → wall/glass block
+5. **Walls** (if `walls` is a block), at `sy+1` (and `sy+2` if `wall_height=2`),
+   perpendicular offset ±1, full length → the wall block
+6. **Lighting** (if `light` set), every `light_spacing` on the chosen side(s):
+   `pole` = a 3-tall deck-block post just beyond the edge with the light on top;
+   `edge` = a support block + the light on the deck edge
 
 Each cuboid layer is a single `fill`. If a layer would exceed 32 768 blocks it's
 split into sequential chunks along the direction axis.
@@ -305,12 +320,14 @@ The build action menu offers:
 
 ## 9. UX / menus
 
-New top-level entry `[railroad]` in the main menu (beside `[map]`, `[players]`),
-backed by `railroad_view`:
+New top-level entry `[rail builder]` in the main menu (beside `[map]`); the
+`railroad` give-kits show up as their own browsable catalog category. Backed by
+`railroad_view`:
 
 - **Build a line** → pick player → `player_pose` fills start/dir (overridable) →
-  width / length / deck / color / walls → preview → action menu
-- **Place a station** → `simple halt` | `covered stop` → orient → preview → action menu
+  height offset / width / length / deck / color / walls / lighting → preview →
+  action menu (run / copy / save as YAML)
+- **Place a station** → `halt` | `covered` → deck / color → preview → action menu
 - **Load a saved line** → pick a `*.yml` → compile → action menu
 - **Materials / corner kit** → jumps to the `railroad` catalog category
 

@@ -42,6 +42,10 @@ DEFAULTS = {
     "walls": "none",     # none | open | <block id> (e.g. glass, oak_fence)
     "wall_height": 1,    # 1 or 2, only when walls is a block
     "power_spacing": 9,  # redstone_block under the rail every N blocks; see below
+    "light": "none",     # none | <light block id> (e.g. lantern, sea_lantern)
+    "light_style": "pole",   # pole (lamp posts) | edge (lanterns on the deck edge)
+    "light_spacing": 8,  # blocks between lights; <=24 stops all mob spawns
+    "light_side": "both",  # both | left | right
 }
 
 
@@ -144,6 +148,29 @@ def generate_segment(seg, color):
         for h in range(wall_height):
             cmds += fills_along(+1, ry + h, walls)
             cmds += fills_along(-1, ry + h, walls)
+
+    # lighting (optional): lamp posts beside the track, or lanterns on the edge.
+    # Any block light > 0 stops hostile spawns, so a lit track is a safe track.
+    light = str(seg["light"]).strip().lower()
+    if light not in ("none", "off", ""):
+        style = str(seg["light_style"]).strip().lower()
+        lspace = max(1, seg["light_spacing"])
+        sides = {"left": (-1,), "right": (1,), "both": (-1, 1)}.get(
+            str(seg["light_side"]).lower(), (-1, 1))
+
+        def at(i, o, y):
+            return (sx + dx * i + px * o, y, sz + dz * i + pz * o)
+
+        pole_off = width // 2 + 1                # just beyond the deck edge
+        for i in range(0, length, lspace):
+            for s in sides:
+                if style == "edge":              # lantern on the deck edge
+                    cmds.append(setblock(*at(i, s, dy), deck))   # support nub
+                    cmds.append(setblock(*at(i, s, ry), light))
+                else:                            # pole: 3-tall post + light on top
+                    o = s * pole_off
+                    cmds.append(fill(*at(i, o, dy), *at(i, o, dy + 2), deck))
+                    cmds.append(setblock(*at(i, o, dy + 3), light))
 
     end_block = [sx + dx * (length - 1), ry, sz + dz * (length - 1)]
     return cmds, end_block
@@ -310,6 +337,13 @@ def resolve(data, pose=None):
         m["power_spacing"] = _int(m["power_spacing"], "power_spacing", idx)
         if m["power_spacing"] < 1:
             raise RailError(f"segment {idx}: `power_spacing` must be >= 1")
+        if str(m["light_style"]).lower() not in ("pole", "edge"):
+            raise RailError(f"segment {idx}: `light_style` must be pole or edge")
+        if str(m["light_side"]).lower() not in ("both", "left", "right"):
+            raise RailError(f"segment {idx}: `light_side` must be both/left/right")
+        m["light_spacing"] = _int(m["light_spacing"], "light_spacing", idx)
+        if m["light_spacing"] < 1:
+            raise RailError(f"segment {idx}: `light_spacing` must be >= 1")
 
         out.append(m)
         dx, dz = DIRS[m["dir"]]
