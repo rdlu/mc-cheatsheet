@@ -267,52 +267,35 @@ def generate_station(anchor, direction, deck, color, kind):
     return cmds
 
 
-BRAKE_ZONE = 6                                 # length of a terminus braking run
-
-
 def generate_terminus(anchor, direction, deck, color):
-    """A buffer-stop end-of-line that halts the cart with a BRAKE ZONE, not an
-    impact. `anchor` is the line-side start of the zone; `direction` is the
-    travel direction arriving at it.
-
-    The whole zone is consecutive *unpowered* powered-rails. A cart — even one at
-    top speed kept up by the line's boosters — decelerates smoothly across them
-    and stops well short of the end, with no collision. That matters: a single
-    brake rail plus a wall (the naive design) lets a fast *ridden* cart slam the
-    wall, and the abrupt stop throws the rider clean over it — which is exactly
-    how this line dropped its rider into the void, twice, before this fix.
-
-    A **3-high wall** guards the very end and walls off the platform edge so you
-    can't walk off, but the cart never reaches it at speed. It's a clean dead
-    end — to head back, give the cart a nudge the way you came and the line's
-    (bidirectional) boosters carry it. `direction` is the arrival direction.
+    """A simple buffer stop at a line's end: the rail ends at `anchor` and a
+    solid wall sits one block ahead. A cart bumps the wall and halts (it stops
+    cleanly even above top speed); the wall is 2 high so it also keeps you from
+    walking off the edge. No forward departure rail, so nothing can relaunch a
+    cart off the end. `direction` is the travel direction arriving at the stop.
     """
     ax, ay, az = anchor
     dx, dz = DIRS[direction]
     rx, rz = (-dz, dx)                         # "right" relative to travel
     shape = "east_west" if dx else "north_south"
-    n = BRAKE_ZONE
 
     def w(f, r, u):                            # forward/right/up -> world x,y,z
         return (ax + f * dx + r * rx, ay + u, az + f * dz + r * rz)
 
     cmds = []
-    # platform floor, one below rail level: from a block behind the zone (the
-    # isolation rail) up to and under the wall. This deck fill also overwrites any
-    # line redstone_block under the zone, so a booster can't power (un-brake) it.
-    cmds.append(fill(*w(-1, -1, -1), *w(n, 1, -1), deck))
-    # an isolation plain rail joins the line; then the braking zone
+    # a short platform + the last two rails of the line
+    cmds.append(fill(*w(-1, -1, -1), *w(0, 1, -1), deck))
     cmds.append(setblock(*w(-1, 0, 0), f"rail[shape={shape}]"))
-    for f in range(0, n):
-        cmds.append(setblock(*w(f, 0, 0), f"powered_rail[shape={shape}]"))
-    # 3-high end wall: a backstop the cart never reaches at speed, and the edge
-    # guard that keeps you on the platform
-    cmds.append(fill(*w(n, -1, 0), *w(n, 1, 2), deck))
-    # lighting + a colour marker
-    for f, r in ((0, -1), (0, 1), (n - 1, -1), (n - 1, 1)):
-        cmds.append(setblock(*w(f, r, 0), "lantern"))
+    cmds.append(setblock(*w(0, 0, 0), f"rail[shape={shape}]"))
+    # the buffer: a 3-wide, 2-high wall on its own footing one block ahead. It
+    # stops the cart and walls off the platform edge.
+    cmds.append(fill(*w(1, -1, -1), *w(1, 1, -1), deck))
+    cmds.append(fill(*w(1, -1, 0), *w(1, 1, 1), deck))
+    # a lantern each side + a colour marker
+    cmds.append(setblock(*w(0, -1, 0), "lantern"))
+    cmds.append(setblock(*w(0, 1, 0), "lantern"))
     if color:
-        cmds.append(setblock(*w(1, 0, -1), color))
+        cmds.append(setblock(*w(0, 0, -1), color))
     return cmds
 
 
