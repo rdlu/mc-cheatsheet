@@ -99,6 +99,23 @@ def setblock(x, y, z, block):
     return f"setblock {x} {y} {z} {ns(block)}"
 
 
+def cmd_bbox(cmds):
+    """(min_x, min_z, max_x, max_z) over the setblock/fill commands, or None.
+    Used to force-load the build's chunks (a fill/setblock into an unloaded
+    chunk fails with "that position is not loaded")."""
+    xs, zs = [], []
+    for c in cmds:
+        p = c.split()
+        try:
+            if p[0] == "setblock":
+                xs.append(int(p[1])); zs.append(int(p[3]))
+            elif p[0] == "fill":
+                xs += [int(p[1]), int(p[4])]; zs += [int(p[3]), int(p[6])]
+        except (IndexError, ValueError):
+            continue
+    return (min(xs), min(zs), max(xs), max(zs)) if xs else None
+
+
 # --- geometry ----------------------------------------------------------------
 
 OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
@@ -624,6 +641,16 @@ def compile_cmds(data, pose=None):
         n = last["length"]
         cmds.append(setblock(last["from"][0] + dx * n, last["from"][1],
                              last["from"][2] + dz * n, end_stop))
+
+    # A line can run far from any player, into chunks that aren't loaded — and a
+    # fill/setblock into an unloaded chunk just fails ("that position is not
+    # loaded"). So force-load the build's footprint first and release it after.
+    # `forceload add` marks up to 256 chunks; a single line stays well under.
+    bb = cmd_bbox(cmds)
+    if bb:
+        x1, z1, x2, z2 = bb
+        cmds = ([f"forceload add {x1} {z1} {x2} {z2}"] + cmds
+                + [f"forceload remove {x1} {z1} {x2} {z2}"])
     return cmds
 
 

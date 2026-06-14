@@ -20,15 +20,38 @@ function rcon_exec_many # each argument is one command
         return 1
     end
     ensure_conf; or return 1
-    set -l n (count $argv)
-    test $n -gt 0; or return 0
+    test (count $argv) -gt 0; or return 0
     set -l batch 100
-    set -l i 1
-    while test $i -le $n
-        set -l j (math "$i + $batch - 1")
-        test $j -gt $n; and set j $n
-        MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $argv[$i..$j]; or return 1
-        set i (math "$j + 1")
+    set -l pending
+    # `forceload add` must take effect (chunks load) before the fills/setblocks
+    # that follow — a build into an unloaded chunk fails. So flush any pending
+    # batch, send the forceload on its own connection, and for an `add` poll
+    # `execute if loaded` on the far corner until the chunks are really up.
+    for cmd in $argv
+        if string match -q 'forceload *' -- $cmd
+            if set -q pending[1]
+                MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $pending; or return 1
+                set -e pending
+            end
+            MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $cmd; or return 1
+            set -l p (string split ' ' -- $cmd)
+            if test "$p[2]" = add; and test (count $p) -ge 6
+                for try in (seq 1 60)
+                    set -l a (MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c "execute if loaded $p[3] 0 $p[4]")
+                    set -l b (MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c "execute if loaded $p[5] 0 $p[6]")
+                    string match -q '*passed*' -- "$a"; and string match -q '*passed*' -- "$b"; and break
+                end
+            end
+        else
+            set -a pending $cmd
+            if test (count $pending) -ge $batch
+                MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $pending; or return 1
+                set -e pending
+            end
+        end
+    end
+    if set -q pending[1]
+        MCRCON_HOST=$HOST MCRCON_PORT=$PORT MCRCON_PASS=$PASS mcrcon -c $pending; or return 1
     end
 end
 
