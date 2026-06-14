@@ -33,13 +33,15 @@ walks you through it:
 You get a **preview** of the commands, then **run over RCON**, **copy** them, or
 **save as YAML** to `~/.config/mc-tui/rail/`.
 
-## Always powered
+## Kept at top speed
 
-Every rail is a `powered_rail`, kept energised by a `redstone_block` tucked into
-the deck under the rail every **9 blocks**. An energised powered rail relays
-power up to 8 rails each way, and 9-block spacing (placed start-to-end) lands
-each new source on a still-unpowered rail so it relays cleanly — no dead "brake"
-segments, constant top speed. Just drop a minecart and ride.
+The track is mostly plain `rail`, with a **booster** every **9 blocks** — a
+`powered_rail` sitting on its own `redstone_block` tucked into the deck. Each
+booster powers itself, and the plain rails between simply coast, so the line
+uses very little gold and there are never any *unpowered* powered-rails to brake
+the cart. A booster every 9 blocks keeps a minecart pinned at top speed on the
+flat (it's conservative — boosters carry a cart much farther than that). Just
+drop a minecart on the line and ride.
 
 ## Lighting
 
@@ -64,7 +66,7 @@ off the end: it stops at the buffer.
 
 To continue, ride to the end, hop out, and **build the next line from there** — it
 starts where you're standing, so its first rail lands on the buffer and
-**replaces it**, seamlessly joining the two (the new rail is freshly powered, so
+**replaces it**, seamlessly joining the two (a new line starts with a booster, so
 the whole run stays at top speed). Repeat as far as you like.
 
 ## Stations
@@ -154,7 +156,7 @@ defaults:
   width: 3
   deck: polished_andesite    # prefer polished/brick variants
   walls: glass
-  power_spacing: 9           # keep at 9
+  power_spacing: 9           # booster every N blocks (9 is conservative)
   light: lantern             # none | lantern | sea_lantern | glowstone | …
   light_style: pole          # pole | edge
   light_spacing: 8

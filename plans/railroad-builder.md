@@ -47,7 +47,7 @@ Everything below was discussed and agreed before implementation:
 | Length | free value, with presets **8 / 16 / 32 / 64 / 128 / 256** (powers of two tile cleanly) |
 | Deck width | prompt **1 or 3** per build |
 | Line color | **under-rail stripe** (center column); width-3 edges keep the stone palette |
-| Power | **always powered** — continuous `powered_rail` + `redstone_block` every `power_spacing` (default **9** = relay 8 + 1; see §3) |
+| Power | plain `rail` with a `powered_rail` + `redstone_block` **booster** every `power_spacing` (default **9**); each booster is powered on its own, no relay — see §3 |
 | Lighting | optional — a `light` block on **poles** (lamp posts), the deck **edge**, or the base **side** (hanging under the edge), every `light_spacing` (default 8); any block light stops mob spawns |
 | End stop | optional `end_stop` buffer block past the last rail (stops a runaway cart); overwritten when you continue the line — for laying long runs in chunks |
 | Stations | **parametric** (generated commands, not binary structures); two designs: **simple halt** + **covered stop** |
@@ -70,25 +70,22 @@ The facts the generator depends on:
   - run along **Z** (north/south) → `rail[shape=north_south]`
   - corners use `shape=south_east`, `north_east`, etc.
 - **Powered rails must be powered, or they brake.** An *unpowered* `powered_rail`
-  actively slows carts — so every powered rail on the line must receive power.
-- **Power propagation:** a `redstone_block` directly beneath a `powered_rail`
-  activates it, and an activated powered rail relays power to up to **8** powered
-  rails in each direction along the track. (Confirmed live by probing
-  `powered_rail[powered=true]` per rail.)
-  - **Spacing must be 9** (relay 8 + 1), and sources are placed in **increasing
-    order**. Why: dropping a redstone block under a rail that is *already* powered
-    (by the previous source's relay) does **not** start a fresh relay — the
-    rail's powered state doesn't change, so nothing propagates onward. With
-    spacing ≤ 8 the 2nd source always lands on an already-powered rail and
-    coverage stalls there (we hit exactly this in testing: `spacing 8` powered
-    `z=32–40` then died). Spacing 9 lands each new source on a still-unpowered
-    rail → fresh relay → gapless coverage. Spacing ≥ 10 leaves gaps.
-  - Edge case: chaining two **same-direction** segments can re-trigger the stall
-    at the boundary (the next segment's first source may sit on a rail already
-    powered across the join). Single segments — the common case — are unaffected;
-    prefer one longer segment over chaining straight runs.
-- **Speed:** a continuous line of *powered* powered-rails keeps an occupied cart
-  pinned at top speed (8 m/s). On flat ground that's the simplest robust choice.
+  actively slows carts. The line avoids this entirely: it is plain `rail` with a
+  **booster** (`powered_rail` on a `redstone_block`) only every `power_spacing`
+  blocks. No powered rail is ever left unpowered, so nothing brakes.
+- **Booster spacing:** each booster sits on its own `redstone_block` and is
+  powered independently — there is **no powered-rail relay** in the design (the
+  plain rails between boosters don't conduct, they just coast). So spacing is
+  purely a *speed-maintenance* number, not a relay constraint. A single active
+  booster keeps an occupied cart at top speed for tens of blocks on the flat;
+  the default **9** is deliberately conservative (live-verified: a cart launched
+  off a booster holds 0.4 b/tick = 8 m/s across the plain rails to the next).
+  - History: an earlier design laid the **whole** line as `powered_rail` and
+    leaned on the relay (≤ 8 each way), which forced spacing = 9 and was both
+    gold-hungry and fragile (any unpowered powered-rail braked). Switching to
+    plain-rail-plus-boosters removed the relay dependency and the brake risk.
+- **Speed:** boosters every 9 blocks keep an occupied cart pinned at top speed
+  (8 m/s) on flat ground, using a fraction of the gold.
 
 ### Facing detection
 
@@ -172,7 +169,7 @@ defaults:                   # applied to every segment unless overridden
   deck: polished_andesite   # deck block — prefer polished/brick variants
   walls: glass              # none | open | <block id>  (open = accent edges, no barrier)
   wall_height: 1            # 1 or 2 (only when walls is a block)
-  power_spacing: 9          # redstone_block every N rails — keep at 9 (see §3)
+  power_spacing: 9          # booster (powered_rail+redstone) every N rails (see §3)
   light: lantern            # none | <light block>  (lantern, sea_lantern, glowstone…)
   light_style: pole         # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
   light_spacing: 8          # blocks between lights — <=24 stops all mob spawns
@@ -207,8 +204,9 @@ stations:
   any other value is the **barrier block id** (e.g. `glass`, `oak_fence`,
   `stone_brick_wall`) placed on the two edge columns from rail level up
   `wall_height` blocks. With width 1 the barrier floats immediately beside the rail.
-- `power_spacing`: blocks between `redstone_block`s under the rail. **Keep at 9**
-  (§3 explains why other values stall or gap).
+- `power_spacing`: blocks between boosters (a `powered_rail` on a `redstone_block`
+  amid plain rail). Default **9** is conservative; since each booster is powered
+  independently (no relay) it can safely be larger to save gold (§3).
 - `light`: `none`, or a light block id (`lantern`, `sea_lantern`, `glowstone`,
   `end_rod`, …). When set, lights are placed every `light_spacing`.
 - `light_style`: `pole` (a 3-tall post just beyond the deck edge with the light
@@ -221,8 +219,8 @@ stations:
 - `end_stop`: `none`, or a block placed one past the last rail as a **buffer** so
   a runaway cart can't fly off the end. It sits on the centre line at rail level,
   so building the next chunk forward (its first rail lands there) overwrites it
-  cleanly — ideal for laying long lines in pieces. The join stays powered (the
-  overwriting rail is freshly placed, so it relays — see §3).
+  cleanly — ideal for laying long lines in pieces. The join stays at speed: a
+  continuation starts with a booster at its first rail (offset 0; see §3).
 - `stations[].at`: `start`, `end`, an integer **offset along the line**, or
   explicit `[x,y,z]`.
 
@@ -236,9 +234,10 @@ block `D`, color `C`, walls — the generator emits, in order:
 
 1. **Deck edges** (width 3 only), at `sy`, perpendicular offset ±1, full length → `D`
 2. **Under-rail stripe**, at `sy`, offset 0, full length → `C` (or `D` if no color)
-3. **Rail**, at `sy+1`, offset 0, full length → `powered_rail[shape=<axis>]`
-4. **Power**, `setblock` `redstone_block` at `sy`, offset 0, every `power_spacing`
-   blocks (overwrites the stripe at those points)
+3. **Rail**, at `sy+1`, offset 0, full length → `rail[shape=<axis>]` (plain)
+4. **Boosters**, every `power_spacing` blocks at offset 0: a `redstone_block` at
+   `sy` (overwrites the stripe there) with a `powered_rail[shape=<axis>]` set on
+   top at `sy+1` (overwrites the plain rail there)
 5. **Walls** (if `walls` is a block), at `sy+1` (and `sy+2` if `wall_height=2`),
    perpendicular offset ±1, full length → the wall block
 6. **Lighting** (if `light` set), every `light_spacing` on the chosen side(s):
@@ -260,16 +259,17 @@ Player at ≈ `(119, 64, −30)` facing **east**, width 3, deck diorite, color
 fill 120 63 -31 247 63 -31 minecraft:diorite          # deck edge
 fill 120 63 -29 247 63 -29 minecraft:diorite          # deck edge
 fill 120 63 -30 247 63 -30 minecraft:blue_concrete    # under-rail stripe
-fill 120 64 -30 247 64 -30 minecraft:powered_rail[shape=east_west]
-setblock 120 63 -30 minecraft:redstone_block          # power, every 9 (in order)
+fill 120 64 -30 247 64 -30 minecraft:rail[shape=east_west]   # plain track
+setblock 120 63 -30 minecraft:redstone_block          # booster every 9 …
+setblock 120 64 -30 minecraft:powered_rail[shape=east_west]
 setblock 129 63 -30 minecraft:redstone_block
-setblock 138 63 -30 minecraft:redstone_block
-# … through x=246  (15 redstone blocks for 128 length)
+setblock 129 64 -30 minecraft:powered_rail[shape=east_west]
+# … through x=246  (15 boosters for 128 length)
 fill 120 64 -31 247 64 -31 minecraft:glass            # wall
 fill 120 64 -29 247 64 -29 minecraft:glass            # wall
 ```
 
-≈ 6 fills + 15 setblocks ≈ 21 commands — one RCON round-trip.
+≈ 6 fills + ~30 setblocks ≈ 36 commands — one RCON round-trip.
 
 ---
 
@@ -288,8 +288,8 @@ The stop mechanism (live-verified by probing `powered_rail[powered=…]`):
 
 - A 5-long × 3-wide platform deck, one block below rail level.
 - Track through it: `powered_rail` at both ends (with a `redstone_block` under
-  each so the approach/departure stay powered), **regular `rail`** at ±1 to break
-  the power relay, and a **launcher** `powered_rail` in the centre with *no*
+  each so the approach/departure stay powered), **regular `rail`** at ±1 to
+  isolate the launcher, and a **launcher** `powered_rail` in the centre with *no*
   source under it — so it sits **unpowered = a brake** and the cart stops.
 - A **lever** on a solid post beside the launcher: flip it on and the post
   strong-powers the launcher → the cart departs; flip off to park. (A lever, not

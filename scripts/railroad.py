@@ -136,15 +136,17 @@ def generate_segment(seg, color):
         cmds += fills_along(+1, dy, deck)
         cmds += fills_along(-1, dy, deck)
     cmds += fills_along(0, dy, color or deck)   # under-rail stripe (line colour)
-    cmds += fills_along(0, ry, f"powered_rail[shape={shape}]")
-    # Power: a redstone_block under a rail energises it, and an energised powered
-    # rail relays power to up to 8 rails each way. So one source per 9 rails gives
-    # gapless coverage. Critically, place sources in INCREASING order: each then
-    # lands on a still-unpowered rail and kicks off a fresh relay. Dropping a
-    # source under an already-powered rail does NOT start a new relay (the rail's
-    # state doesn't change), which is why spacing <= 8 stalls after the 1st source.
+    cmds += fills_along(0, ry, f"rail[shape={shape}]")          # plain track…
+    # …with a booster only where it sits on a power source: a redstone_block in
+    # the deck and a powered_rail directly above it. Each booster powers itself
+    # (no powered-rail relay), and the plain rails between simply coast — so the
+    # line is mostly cheap rail and there are never any unpowered powered-rails
+    # acting as brakes. A booster every `spacing` blocks keeps a cart pinned at
+    # top speed on the flat; 9 is conservative (boosters carry much farther).
     for i in range(0, length, spacing):
         cmds.append(setblock(sx + dx * i, dy, sz + dz * i, "redstone_block"))
+        cmds.append(setblock(sx + dx * i, ry, sz + dz * i,
+                             f"powered_rail[shape={shape}]"))
     if walls not in ("none", "open", ""):       # side barrier (a block id)
         for h in range(wall_height):
             cmds += fills_along(+1, ry + h, walls)
