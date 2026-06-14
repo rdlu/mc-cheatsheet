@@ -426,6 +426,27 @@ resources|blaze_rod|Vara de blaze|brewing + eyes of ender
 resources|paper|Papel|
 resources|slime_ball|Bola de slime|sticky pistons, leads
 resources|honeycomb|Favo de mel|wax copper, hives
+paint|ink_sac|Saco de tinta|black dye — squid drop, books and signs
+paint|glow_ink_sac|Saco de tinta brilhante|makes sign text glow in the dark
+paint|white_dye|Corante branco|color wool, concrete, terracotta, beds, banners
+paint|light_gray_dye|Corante cinza-claro|
+paint|gray_dye|Corante cinza|
+paint|black_dye|Corante preto|
+paint|brown_dye|Corante marrom|
+paint|red_dye|Corante vermelho|
+paint|orange_dye|Corante laranja|
+paint|yellow_dye|Corante amarelo|
+paint|lime_dye|Corante verde-limão|
+paint|green_dye|Corante verde|
+paint|cyan_dye|Corante ciano|
+paint|light_blue_dye|Corante azul-claro|
+paint|blue_dye|Corante azul|lapis lazuli works too
+paint|purple_dye|Corante roxo|
+paint|magenta_dye|Corante magenta|
+paint|pink_dye|Corante rosa|
+paint|painting|Quadro|hangable art — random unless you face-place
+paint|glow_item_frame|Moldura brilhante|glowing item frame (see utility for plain)
+paint|white_banner|Estandarte branco|loom + dyes for patterns
 eggs|villager_spawn_egg|Ovo gerador de aldeão|instant neighbor
 eggs|horse_spawn_egg|Ovo gerador de cavalo|
 eggs|wolf_spawn_egg|Ovo gerador de lobo|
