@@ -1525,6 +1525,62 @@ function rail_build_line
     rail_action_menu $tmp $id
 end
 
+# place a single station at the player's position (a length-1 segment carries
+# the anchor; the station overwrites it, so only the station shows).
+function rail_build_station
+    type -q uv; or begin
+        echo 'uv is required for the railroad compiler (mise install)'
+        pause
+        return
+    end
+    set -l who (pick_player player); or return
+    set -l pose (player_pose $who | string split ' ')
+    if test (count $pose) -lt 5
+        echo "couldn't read $who's position/facing — online?"
+        pause
+        return
+    end
+    set -l px $pose[2]
+    set -l py $pose[3]
+    set -l pz $pose[4]
+    set -l facing $pose[5]
+    echo "$who is at $px $py $pz, facing $facing"
+
+    set -l dirs $facing
+    for d in north south east west
+        test $d != $facing; and set -a dirs $d
+    end
+    set -l dir (rail_pick direction "build direction (detected: $facing) — esc cancels" $dirs); or return
+    set -l type (rail_pick 'station type' 'halt = open stop · covered = roof + hanging lights' halt covered); or return
+    set -l off (fzf_input 'height offset' 'blocks above your feet — 0 = at your level' 0 5 10 20)
+    test -n "$off"; or set off 0
+    set -l deck (rail_pick deck 'platform material (polished/brick) — or type any block' (rail_deck_palette)); or return
+    set -l color (rail_pick 'accent color' 'marker block — none for plain' (rail_color_palette))
+    or set color none
+    set -l name (fzf_input 'station name' 'a label (used as the saved filename)' "$type station")
+    test -n "$name"; or set name "$type station"
+
+    set -l d (rail_delta $dir | string split ' ')
+    set -l sx (math "$px + $d[1]")
+    set -l sy (math "$py + $off")
+    set -l sz (math "$pz + $d[2]")
+    set -l id (string lower -- "$name" | string replace -ra '[^a-z0-9]+' '-' | string trim -c '-')
+    test -n "$id"; or set id station
+
+    set -l tmp (mktemp /tmp/mc-tui-rail.XXXXXX.yml)
+    begin
+        set -l colorpart ''
+        test "$color" != none; and set colorpart ", color: $color"
+        echo "line: {id: $id$colorpart}"
+        echo "defaults: {width: 1, deck: $deck, power_spacing: 9}"
+        echo 'segments:'
+        echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: 1}"
+        echo 'stations:'
+        echo "  - {at: start, type: $type}"
+    end >$tmp
+    rail_action_menu $tmp $id
+end
+
 function rail_load_line
     type -q uv; or begin
         echo 'uv is required for the railroad compiler (mise install)'
@@ -1549,6 +1605,7 @@ function railroad_view
         set -l hdr (status_line)\n'railroad builder — powered lines + kits, built from where you stand'
         set -l choice (printf '%s\n' \
                 'build a line' \
+                'place a station' \
                 'load a saved line' \
                 'materials / corner kit' \
                 back | \
@@ -1556,6 +1613,8 @@ function railroad_view
         switch "$choice"
             case 'build*'
                 rail_build_line
+            case 'place*'
+                rail_build_station
             case 'load*'
                 rail_load_line
             case 'materials*'

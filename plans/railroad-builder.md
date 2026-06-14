@@ -251,29 +251,38 @@ fill 120 64 -29 247 64 -29 minecraft:glass            # wall
 ## 7. Stations (parametric)
 
 Stations are generated commands oriented to the travel direction, anchored at a
-point on the line. Orientation uses a small helper that maps
-`(forward, right, up)` offsets to world `(x, y, z)` given the cardinal direction,
-so one definition serves all four directions.
+rail block on the line. Orientation uses a helper that maps `(forward, right,
+up)` offsets to world `(x, y, z)` for the cardinal direction, so one definition
+serves all four. `at` resolves to an anchor: `start`, `end`, an integer offset
+along the line, or explicit `[x,y,z]`. A station **overwrites** the line's rails
+at its location (it's emitted after the segments). Placing one standalone (the
+TUI's "place a station") uses a length-1 segment to carry the anchor, which the
+station then overwrites — so only the station shows.
+
+The stop mechanism (live-verified by probing `powered_rail[powered=…]`):
+
+- A 5-long × 3-wide platform deck, one block below rail level.
+- Track through it: `powered_rail` at both ends (with a `redstone_block` under
+  each so the approach/departure stay powered), **regular `rail`** at ±1 to break
+  the power relay, and a **launcher** `powered_rail` in the centre with *no*
+  source under it — so it sits **unpowered = a brake** and the cart stops.
+- A **lever** on a solid post beside the launcher: flip it on and the post
+  strong-powers the launcher → the cart departs; flip off to park. (A lever, not
+  a button, so a parked cart stays put until you choose to leave.) Verified: lever
+  off → launcher unpowered, lever on → powered.
 
 ### Simple halt
 
-Minimal stop you can decorate by hand later:
-
-- a short widened deck (3×3-ish landing)
-- a **brake**: a `powered_rail` left unpowered (no redstone under it) → cart stops
-- a `stone_button` on an adjacent block wired to power that rail → press to depart
-- regular `rail` leading back into the powered line
+The platform + launcher above, open, with a `lantern` on each of the four
+platform corners and a line-colour marker block on the far edge.
 
 ### Covered stop
 
-The halt, plus:
+The halt, plus a 3-wide roof two blocks up, four corner pillars, and two
+`lantern[hanging=true]` under the roof.
 
-- a 3-wide roof a couple of blocks up (slabs/stairs)
-- `sea_lantern` (or the line color's lamp) for lighting
-- a line-color marker block / sign naming the stop
-
-Both are emitted as `fill`/`setblock` sequences — fully hand-editable, no binary
-`.nbt` files, and they recolor with the line.
+Both are `fill`/`setblock` only — hand-editable, no binary `.nbt`, and they take
+the line's deck material and colour.
 
 ---
 

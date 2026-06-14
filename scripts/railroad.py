@@ -149,6 +149,89 @@ def generate_segment(seg, color):
     return cmds, end_block
 
 
+# --- stations ----------------------------------------------------------------
+
+def station_anchor(at, segments):
+    """Resolve a station `at` (start | end | offset | [x,y,z]) to a world rail
+    anchor and the travel direction there."""
+    if isinstance(at, bool):
+        raise RailError("station `at` must be start/end, an offset, or [x,y,z]")
+    if isinstance(at, str):
+        if at.lower() == "start":
+            s = segments[0]
+            return list(s["from"]), s["dir"]
+        if at.lower() == "end":
+            s = segments[-1]
+            dx, dz = DIRS[s["dir"]]
+            n = s["length"] - 1
+            return [s["from"][0] + dx * n, s["from"][1], s["from"][2] + dz * n], s["dir"]
+        raise RailError(f"station `at: {at}` — use start/end, an offset, or [x,y,z]")
+    if isinstance(at, (list, tuple)) and len(at) == 3:
+        return [int(v) for v in at], segments[0]["dir"]
+    if isinstance(at, int):
+        off = at
+        for s in segments:
+            if off < s["length"]:
+                dx, dz = DIRS[s["dir"]]
+                return [s["from"][0] + dx * off, s["from"][1],
+                        s["from"][2] + dz * off], s["dir"]
+            off -= s["length"]
+        s = segments[-1]                       # past the end -> clamp to last rail
+        dx, dz = DIRS[s["dir"]]
+        n = s["length"] - 1
+        return [s["from"][0] + dx * n, s["from"][1], s["from"][2] + dz * n], s["dir"]
+    raise RailError(f"station `at: {at}` — use start/end, an offset, or [x,y,z]")
+
+
+def generate_station(anchor, direction, deck, color, kind):
+    """Commands for a station centred on `anchor` (a rail block), oriented to
+    `direction`. A 5-long platform with a lever-launcher stop in the middle:
+    the centre powered rail is isolated by regular rails so it stays unpowered
+    (a brake) until the lever energises it, launching the cart onward.
+    """
+    ax, ay, az = anchor
+    dx, dz = DIRS[direction]
+    rx, rz = (-dz, dx)                         # "right" relative to travel
+    shape = "east_west" if dx else "north_south"
+
+    def w(f, r, u):                            # forward/right/up -> world x,y,z
+        return (ax + f * dx + r * rx, ay + u, az + f * dz + r * rz)
+
+    cmds = []
+    # platform: 5 (forward) x 3 (sideways) deck, one below rail level
+    a = w(-2, -1, -1)
+    b = w(2, 1, -1)
+    cmds.append(fill(*a, *b, deck))
+    # track: powered ends, regular-rail isolation, launcher in the centre
+    layout = {-2: "powered_rail", -1: "rail", 0: "powered_rail",
+              1: "rail", 2: "powered_rail"}
+    for f, rail in layout.items():
+        x, y, z = w(f, 0, 0)
+        cmds.append(setblock(x, y, z, f"{rail}[shape={shape}]"))
+    # power the two end rails (approach brake-free + departure boost); the
+    # launcher (f=0) gets no source, so it brakes until the lever fires it
+    for f in (-2, 2):
+        x, y, z = w(f, 0, -1)
+        cmds.append(setblock(x, y, z, "redstone_block"))
+    # lever-launcher: a solid post beside the centre rail, lever on top of it
+    cmds.append(setblock(*w(0, 1, 0), deck))
+    cmds.append(setblock(*w(0, 1, 1), "lever[face=floor]"))
+    # line-colour marker on the far edge
+    if color:
+        cmds.append(setblock(*w(0, -1, 0), color))
+
+    if kind == "covered":
+        cmds.append(fill(*w(-2, -1, 3), *w(2, 1, 3), deck))      # roof
+        for f, r in ((-2, -1), (-2, 1), (2, -1), (2, 1)):       # corner pillars
+            cmds.append(fill(*w(f, r, 1), *w(f, r, 2), deck))
+        for f in (-1, 1):                                       # hanging lights
+            cmds.append(setblock(*w(f, 0, 2), "lantern[hanging=true]"))
+    else:                                                       # halt: open
+        for f, r in ((-2, -1), (-2, 1), (2, -1), (2, 1)):       # corner lanterns
+            cmds.append(setblock(*w(f, r, 0), "lantern"))
+    return cmds
+
+
 # --- definition loading & resolution -----------------------------------------
 
 def load(path):
@@ -241,10 +324,15 @@ def compile_cmds(data, pose=None):
     for seg in segments:
         seg_cmds, _ = generate_segment(seg, color)
         cmds += seg_cmds
-    if data.get("stations"):
-        n = len(data["stations"])
-        print(f"railroad: skipping {n} station(s) — not implemented yet",
-              file=sys.stderr)
+    deck = segments[0]["deck"]
+    for st in (data.get("stations") or []):
+        if not isinstance(st, dict):
+            raise RailError("each station must be a mapping")
+        kind = str(st.get("type", "halt")).lower()
+        if kind not in ("halt", "covered"):
+            raise RailError(f"station type `{st.get('type')}` — use halt or covered")
+        anchor, direction = station_anchor(st.get("at", "start"), segments)
+        cmds += generate_station(anchor, direction, deck, color, kind)
     return cmds
 
 
@@ -271,11 +359,12 @@ def main():
             print(f"railroad: {name} -> {len(cmds)} command(s)", file=sys.stderr)
             print("\n".join(cmds))
         else:  # validate
-            segments, color = resolve(data, pose)
-            total = sum(len(generate_segment(s, color)[0]) for s in segments)
+            segments, _ = resolve(data, pose)
+            total = len(compile_cmds(data, pose))
             name = (data.get("line") or {}).get("id", "?")
+            nst = len(data.get("stations") or [])
             print(f"OK — line {name!r}: {len(segments)} segment(s), "
-                  f"~{total} command(s)")
+                  f"{nst} station(s), {total} command(s)")
     except RailError as e:
         print(f"railroad: {e}", file=sys.stderr)
         sys.exit(2)
