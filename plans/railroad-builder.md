@@ -308,15 +308,28 @@ The halt, plus a 3-wide roof two blocks up, four corner pillars, and two
 
 ### Terminus (dead-end buffer)
 
-For the **end** of a line. A halt/covered station has a *forward* departure
-`powered_rail`; at a line's end that flings an overshooting or relaunched cart
-off the edge (hit live — a ridden cart's momentum carried past the brake and the
-departure rail launched it into the void). The terminus removes the forward rail
-entirely: approach coasts in to an unpowered `powered_rail` brake, then a
-**3-wide × 2-high wall one block ahead** stops the cart dead and walls off the
-platform edge. The lever still launches — but with the wall on the far side the
-cart departs **backwards**, the way it came. Verified live: a Motion 0.8 cart
-(double max speed) stopped at the brake against the wall, nothing escaped.
+For the **end** of a line — and a cautionary tale. A halt/covered station has a
+*forward* departure `powered_rail`; at a line's end that flings an overshooting
+cart off the edge. First fix attempt: a single brake rail + a 2-high wall. That
+**also dropped the rider into the void** — twice — because stopping a fast
+*ridden* cart against a wall is an abrupt impact, and the abrupt stop **throws
+the passenger clean over a 2-high wall**. (Empty test carts never showed it:
+they stop in <1 block and have no rider to throw; the armor-stand passenger
+proxy is unreliable — it adds drag a player doesn't.)
+
+The working design halts the cart **gradually, with no impact**: a `BRAKE_ZONE`
+(6) of consecutive *unpowered* `powered_rail`s, isolated from the line's power by
+a plain rail (so a booster can't un-brake it; the deck fill also wipes any line
+`redstone_block` under the zone). A cart entering at top speed decelerates over
+the rails and stops within a block or two — **live-measured: max speed → halt at
++0.9 blocks, an over-max Motion 0.8 shove → +1.2 blocks, ~5 blocks short of the
+wall.** A **3-high wall** guards the very end (the cart never reaches it at
+speed) and walls off the platform edge.
+
+No lever: a powered rail won't launch a stationary cart with no directional
+block, and adding one would eat into the brake margin — so the terminus is a
+clean dead end. To leave, nudge the cart back the way it came; the line's
+boosters are bidirectional and carry it.
 
 All three are `fill`/`setblock` only — hand-editable, no binary `.nbt`, and they
 take the line's deck material and colour.

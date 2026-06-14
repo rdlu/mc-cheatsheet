@@ -267,46 +267,52 @@ def generate_station(anchor, direction, deck, color, kind):
     return cmds
 
 
-def generate_terminus(anchor, direction, deck, color):
-    """A buffer-stop end-of-line, centred so the cart halts at `anchor`.
+BRAKE_ZONE = 6                                 # length of a terminus braking run
 
-    Unlike a station (which has a *forward* departure rail and would fling an
-    overshooting or relaunched cart off the end), a terminus is a dead end: an
-    unpowered powered-rail brake at the stop, then a **2-high wall** one block
-    ahead that physically stops the cart and blocks the platform edge so you
-    can't ride or walk off. The brake doubles as a launcher — flip the lever and,
-    because the wall is on its far side, the cart departs *backwards*, the way it
-    came. `direction` is the travel direction arriving at the stop.
+
+def generate_terminus(anchor, direction, deck, color):
+    """A buffer-stop end-of-line that halts the cart with a BRAKE ZONE, not an
+    impact. `anchor` is the line-side start of the zone; `direction` is the
+    travel direction arriving at it.
+
+    The whole zone is consecutive *unpowered* powered-rails. A cart — even one at
+    top speed kept up by the line's boosters — decelerates smoothly across them
+    and stops well short of the end, with no collision. That matters: a single
+    brake rail plus a wall (the naive design) lets a fast *ridden* cart slam the
+    wall, and the abrupt stop throws the rider clean over it — which is exactly
+    how this line dropped its rider into the void, twice, before this fix.
+
+    A **3-high wall** guards the very end and walls off the platform edge so you
+    can't walk off, but the cart never reaches it at speed. It's a clean dead
+    end — to head back, give the cart a nudge the way you came and the line's
+    (bidirectional) boosters carry it. `direction` is the arrival direction.
     """
     ax, ay, az = anchor
     dx, dz = DIRS[direction]
     rx, rz = (-dz, dx)                         # "right" relative to travel
     shape = "east_west" if dx else "north_south"
+    n = BRAKE_ZONE
 
     def w(f, r, u):                            # forward/right/up -> world x,y,z
         return (ax + f * dx + r * rx, ay + u, az + f * dz + r * rz)
 
     cmds = []
-    # platform floor: 4 (forward) x 3 (sideways), one below rail level
-    cmds.append(fill(*w(-3, -1, -1), *w(0, 1, -1), deck))
-    # approach coasts in from the line; the stop is an unpowered powered-rail
-    # brake — no redstone under it, so it holds the cart until the lever fires
-    for f in (-3, -2, -1):
-        cmds.append(setblock(*w(f, 0, 0), f"rail[shape={shape}]"))
-    cmds.append(setblock(*w(0, 0, 0), f"powered_rail[shape={shape}]"))   # brake
-    # buffer wall one block ahead: 3 wide, 2 high, on its own deck footing. It
-    # stops the cart dead and walls off the end of the platform.
-    cmds.append(fill(*w(1, -1, -1), *w(1, 1, -1), deck))
-    cmds.append(fill(*w(1, -1, 0), *w(1, 1, 1), deck))
-    # lever on a post beside the brake — flipping it powers the brake rail, and
-    # with the wall ahead the cart launches back up the line.
-    cmds.append(setblock(*w(0, 1, 0), deck))
-    cmds.append(setblock(*w(0, 1, 1), "lever[face=floor]"))
+    # platform floor, one below rail level: from a block behind the zone (the
+    # isolation rail) up to and under the wall. This deck fill also overwrites any
+    # line redstone_block under the zone, so a booster can't power (un-brake) it.
+    cmds.append(fill(*w(-1, -1, -1), *w(n, 1, -1), deck))
+    # an isolation plain rail joins the line; then the braking zone
+    cmds.append(setblock(*w(-1, 0, 0), f"rail[shape={shape}]"))
+    for f in range(0, n):
+        cmds.append(setblock(*w(f, 0, 0), f"powered_rail[shape={shape}]"))
+    # 3-high end wall: a backstop the cart never reaches at speed, and the edge
+    # guard that keeps you on the platform
+    cmds.append(fill(*w(n, -1, 0), *w(n, 1, 2), deck))
     # lighting + a colour marker
-    for f, r in ((-3, -1), (-3, 1), (0, -1)):
+    for f, r in ((0, -1), (0, 1), (n - 1, -1), (n - 1, 1)):
         cmds.append(setblock(*w(f, r, 0), "lantern"))
     if color:
-        cmds.append(setblock(*w(-1, 0, -1), color))
+        cmds.append(setblock(*w(1, 0, -1), color))
     return cmds
 
 

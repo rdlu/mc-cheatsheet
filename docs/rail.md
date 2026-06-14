@@ -77,8 +77,8 @@ to your facing:
 - **halt** — an open platform with a lever-controlled launcher and corner
   lanterns
 - **covered** — the same, plus a roof, pillars and hanging lanterns
-- **terminus** — a **dead-end buffer** for the *end* of a line: a brake plus a
-  2-high wall that stops the cart and walls off the edge
+- **terminus** — a **dead-end buffer** for the *end* of a line: a braking zone
+  that halts the cart well short of a 3-high end wall
 
 A halt/covered station's middle is a `powered_rail` that's **unpowered by
 default** (a brake), isolated from the line's power by short regular-rail
@@ -86,11 +86,13 @@ sections — so an arriving cart **stops**. Flip the **lever** beside it to
 energise the launcher and the cart departs; flip it off to park.
 
 !!! warning "Use a terminus at a line's end, not a halt"
-    A halt/covered station has a *forward* departure rail — at the very end of a
-    line it will fling an overshooting or relaunched cart straight off the edge.
-    A **terminus** has no forward rail: a wall one block ahead stops the cart
-    dead and blocks the platform edge, and its lever launches the cart **back**
-    up the line the way it came. Put a terminus wherever a line stops for good.
+    A halt/covered station has a *forward* departure rail, and stopping a
+    fast cart with a single brake against a wall throws the **rider** clean over
+    it. A **terminus** instead brakes the cart over a **6-block zone** of
+    unpowered powered-rails: it decelerates smoothly and halts ~5 blocks short of
+    a 3-high end wall — no impact, nothing to throw you off. It's a clean dead
+    end (to head back, nudge the cart the way you came; the line's boosters carry
+    it). Put a terminus wherever a line stops for good.
 
 You can also add stations to a line's YAML directly:
 
