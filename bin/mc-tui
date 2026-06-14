@@ -1527,6 +1527,8 @@ function rail_build_line
         set lspace (fzf_input 'light spacing' 'blocks between lights — <=24 stops all spawns' 8 6 12 16)
         test -n "$lspace"; or set lspace 8
     end
+    set -l estop (rail_pick 'end stop' 'buffer at the far end so the cart cant fly off — esc/none = off' red_concrete none red_wool deepslate_tiles)
+    or set estop none
     set -l name (fzf_input 'line name' 'a label for this line (used as the saved filename)' "$dir line")
     test -n "$name"; or set name "$dir line"
 
@@ -1544,8 +1546,10 @@ function rail_build_line
         test "$color" != none; and set colorpart ", color: $color"
         set -l lightpart ''
         test "$light" != none; and set lightpart ", light: $light, light_style: $lstyle, light_spacing: $lspace"
+        set -l estoppart ''
+        test "$estop" != none; and set estoppart ", end_stop: $estop"
         echo "line: {id: $id$colorpart}"
-        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9$lightpart}"
+        echo "defaults: {width: $width, deck: $deck, walls: $walls, power_spacing: 9$lightpart$estoppart}"
         echo 'segments:'
         echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: $len}"
     end >$tmp

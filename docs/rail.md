@@ -55,6 +55,18 @@ whole track spawn-proof):
 Pick any light block (lantern, sea lantern, glowstone, end rod…) and which
 side(s) to light.
 
+## Long lines in chunks (the end stop)
+
+Building a very long line at once means riding blind past unloaded chunks. Easier
+to lay it in pieces — and the **end stop** makes that safe. Turn it on (a buffer
+block, e.g. `red_concrete`, one block past the last rail) and a cart can't fly
+off the end: it stops at the buffer.
+
+To continue, ride to the end, hop out, and **build the next line from there** — it
+starts where you're standing, so its first rail lands on the buffer and
+**replaces it**, seamlessly joining the two (the new rail is freshly powered, so
+the whole run stays at top speed). Repeat as far as you like.
+
 ## Stations
 
 `[rail builder]` → **place a station** drops a stop at your position, oriented

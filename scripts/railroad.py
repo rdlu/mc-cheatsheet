@@ -46,6 +46,7 @@ DEFAULTS = {
     "light_style": "pole",   # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
     "light_spacing": 8,  # blocks between lights; <=24 stops all mob spawns
     "light_side": "both",  # both | left | right
+    "end_stop": "none",  # none | <block>: a buffer one past the last rail (cart stop)
 }
 
 
@@ -372,6 +373,16 @@ def compile_cmds(data, pose=None):
             raise RailError(f"station type `{st.get('type')}` — use halt or covered")
         anchor, direction = station_anchor(st.get("at", "start"), segments)
         cmds += generate_station(anchor, direction, deck, color, kind)
+    # optional buffer stop: one block in the cart's path past the last rail, so a
+    # cart can't fly off the end. It sits on the centre line at rail level, so the
+    # next segment's rail overwrites it cleanly when you continue the line.
+    last = segments[-1]
+    end_stop = str(last.get("end_stop", "none")).strip().lower()
+    if end_stop not in ("none", "off", ""):
+        dx, dz = DIRS[last["dir"]]
+        n = last["length"]
+        cmds.append(setblock(last["from"][0] + dx * n, last["from"][1],
+                             last["from"][2] + dz * n, end_stop))
     return cmds
 
 

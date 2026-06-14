@@ -49,6 +49,7 @@ Everything below was discussed and agreed before implementation:
 | Line color | **under-rail stripe** (center column); width-3 edges keep the stone palette |
 | Power | **always powered** — continuous `powered_rail` + `redstone_block` every `power_spacing` (default **9** = relay 8 + 1; see §3) |
 | Lighting | optional — a `light` block on **poles** (lamp posts), the deck **edge**, or the base **side** (hanging under the edge), every `light_spacing` (default 8); any block light stops mob spawns |
+| End stop | optional `end_stop` buffer block past the last rail (stops a runaway cart); overwritten when you continue the line — for laying long runs in chunks |
 | Stations | **parametric** (generated commands, not binary structures); two designs: **simple halt** + **covered stop** |
 | Corners | built **by hand**; a give-kit supplies the materials |
 | Compiler | **Python via `uv`** — single geometry engine; fish is the UI + RCON |
@@ -176,6 +177,7 @@ defaults:                   # applied to every segment unless overridden
   light_style: pole         # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
   light_spacing: 8          # blocks between lights — <=24 stops all mob spawns
   light_side: both          # both | left | right
+  end_stop: none            # none | <block>: a buffer past the last rail (cart stop)
 
 segments:
   - from: [120, 64, -30]    # explicit; or `from: player`, or `from: end`
@@ -216,6 +218,11 @@ stations:
 - `light_spacing`: blocks between lights (default 8). Since any block light > 0
   stops hostile spawns, ≤ 24 keeps the whole track spawn-proof.
 - `light_side`: `both` / `left` / `right`.
+- `end_stop`: `none`, or a block placed one past the last rail as a **buffer** so
+  a runaway cart can't fly off the end. It sits on the centre line at rail level,
+  so building the next chunk forward (its first rail lands there) overwrites it
+  cleanly — ideal for laying long lines in pieces. The join stays powered (the
+  overwriting rail is freshly placed, so it relays — see §3).
 - `stations[].at`: `start`, `end`, an integer **offset along the line**, or
   explicit `[x,y,z]`.
 
