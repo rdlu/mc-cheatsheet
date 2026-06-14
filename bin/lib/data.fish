@@ -279,6 +279,14 @@ blocks|lodestone|Magnetita|bind compasses anywhere
 blocks|glowstone|Pedra luminosa|
 blocks|sea_lantern|Lanterna marinha|
 blocks|shroomlight|Cogubrilho|
+blocks|copper_bulb|Lâmpada de cobre|1.21 redstone-toggle light — full bright (15)
+blocks|exposed_copper_bulb|Lâmpada de cobre exposto|redstone light — dimmer (12), oxidizing
+blocks|weathered_copper_bulb|Lâmpada de cobre desgastado|redstone light — dim (8), oxidizing
+blocks|oxidized_copper_bulb|Lâmpada de cobre oxidado|redstone light — dimmest (4), fully aged
+blocks|waxed_copper_bulb|Lâmpada de cobre encerada|wax-locked bright bulb — never oxidizes
+blocks|waxed_exposed_copper_bulb|Lâmpada de cobre exposto encerada|wax-locked at exposed (12)
+blocks|waxed_weathered_copper_bulb|Lâmpada de cobre desgastado encerada|wax-locked at weathered (8)
+blocks|waxed_oxidized_copper_bulb|Lâmpada de cobre oxidado encerada|wax-locked at oxidized (4)
 blocks|glass|Vidro|
 blocks|stone|Pedra|
 blocks|cobblestone|Pedregulho|
