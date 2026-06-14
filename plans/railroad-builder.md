@@ -396,7 +396,60 @@ mc-tui rail validate <file.yml>  # schema check
 
 ---
 
-## 13. Future ideas (out of scope for v1)
+## 13. Junctions / switches (T + Y)
+
+A `junctions:` list overlays a line with single-branch track switches. Each entry
+resolves an anchor on the track (`start | end | <offset> | [x,y,z]`, same as
+stations) and lays a switch oriented to travel:
+
+- **t** — through line stays straight; a branch peels off 90° (`left` | `right`).
+- **y** — two-way fork: rests toward the side opposite `branch`, diverts to it.
+
+### Why command blocks (the live finding)
+
+The plan was a lever-driven redstone switch. Probing the real 26.1 Fabric server
+(`execute if block … rail[shape=…]`) showed that **doesn't work both ways**:
+
+- A bare rail at a 3-neighbour junction picks its shape by priority (often the
+  "wrong" curve that ignores the incoming side).
+- **Gaining** redstone power forces a specific curve (e.g. `south_west`).
+- **Losing** power does *not* switch it back — the rail clings to its current
+  valid shape. Re-placing the branch rail or toggling a neighbour didn't reset it
+  either. Only an explicit `setblock` (or full re-place) reliably sets the shape.
+
+So a passive lever can divert a cart but can't restore the through line — which
+killed the lever/redstone plan and the long-distance "control from afar" idea
+alike. The reliable primitive is `setblock`-the-shape, and the in-world way to
+fire a `setblock` is a **command block** (enabled by default; placed over RCON).
+
+### Mechanism (verified end to end)
+
+Two impulse command blocks drive the junction rail:
+
+- **divert** CB ← a **lever** beside the junction. Flip it → next cart branches.
+- **reset-to-main** CB ← a **detector rail** one block past the junction. The
+  cart rides over it → switch springs back to the through line.
+
+Placement rules learned the hard way:
+
+- The command blocks sit *clear* of the junction rail (diagonal / ≥2 away) so
+  powering them never throws the switch via stray rail power.
+- A **one-block coast** separates the branch re-accel `powered_rail` (and its
+  `redstone_block`) from the reset command block. Adjacent, the redstone_block
+  pins the reset CB permanently on, so the detector can never pulse it — the
+  switch would never reset. Found via a live cart test, then fixed.
+
+A summoned minecart confirmed the loop: junction set to divert → cart took the
+branch → detector reset the switch to straight as it passed.
+
+### Roles & hubs
+
+Two roles fall out: **maintenance** (walk to a mid-line switch, flip the lever)
+and passenger-style picking where a junction sits by a stop. Multi-exit stations
+(3+ way ladders, interlocks) are *not* built — the simpler layout is a **hub**:
+a cluster of single-exit stations the player walks between to change lines.
+
+## 14. Future ideas (out of scope for v1)
 
 - **Auto corners** — generate L-turns between chained segments (zigzag stairs for
   diagonals) instead of leaving them to the give-kit.
@@ -405,7 +458,7 @@ mc-tui rail validate <file.yml>  # schema check
 - **Structure-based stations** — `type: structure ns:my_station` via
   `/place template`, for pixel-perfect custom stops (needs the structure shipped
   in a datapack).
-- **Signals / sidings** — detector rails + redstone for stop-on-occupied, or
-  switchable junctions.
+- **Signals / sidings** — detector rails + redstone for stop-on-occupied (the
+  switchable-junction half of this is now built — see §13).
 - **Terrain-following lines** — segmented Y steps that hug the ground (denser
   power on slopes).

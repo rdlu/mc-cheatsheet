@@ -90,6 +90,51 @@ stations:
   - { at: end,   type: halt }
 ```
 
+## Junctions (track switches)
+
+`[rail builder]` → **place a junction** drops a switch one block ahead of you,
+oriented to your facing:
+
+- **t** — the through line stays straight; a branch peels off 90° to the
+  `left` or `right`
+- **y** — a two-way fork: the cart rests toward the side opposite the branch
+  and diverts to the branch
+
+**How the switch works.** A plain rail at a junction can't be flipped back and
+forth by a lever alone — in Minecraft, powering a rail forces it into the
+branch curve, but *un*-powering it doesn't switch it back (the rail keeps its
+shape). So each junction is driven by two hidden **command blocks** that set the
+rail's shape directly:
+
+- a **lever** beside the junction fires the "divert" command block — flip it and
+  the **next cart takes the branch**
+- a **detector rail** just past the junction fires the "reset" command block —
+  as the cart rides over it the switch **springs back to the through line**
+
+So it's a one-shot diversion: flip the lever, send a cart down the branch, and
+the switch resets itself for the traffic behind it. The command blocks sit clear
+of the junction rail so they never power it by accident. (Command blocks must be
+enabled on the server — they are by default; everything is placed for you over
+RCON, nothing to craft.)
+
+The branch ends in a short powered stub — **continue it** by building a new line
+from its end (`place a junction` leaves you a rail to extend), exactly like
+chaining line segments.
+
+In YAML a junction overlays the line at any anchor:
+
+```yaml
+junctions:
+  - { at: 64, kind: t, branch: right }   # at: start | end | <offset> | [x,y,z]
+  - { at: 96, kind: y, branch: left }
+```
+
+Two roles fall out of this naturally: a **maintenance** switch out on the line
+(walk up, flip the lever) and, since a junction can sit right by a stop,
+passenger-style picking at a station. For a station that fans out to several
+lines, the simplest layout is a **hub** — a cluster of single-exit stations you
+walk between to change lines — rather than one multi-exit platform.
+
 ## Materials & corners
 
 Corners are built by hand (place rails in an L and they auto-curve). The

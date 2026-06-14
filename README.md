@@ -54,11 +54,13 @@ interactive picker:
   online right now via `list`.
 - **`[map]`** — open the world on [chunkbase](https://www.chunkbase.com/apps/seed-map)
   from the live seed, centered on spawn, coordinates, or a player's position.
-- **`[rail builder]`** — build always-powered surface/air **railroad lines** and
-  **stations** from where you stand: it reads your position + facing, then
-  compiles a parametric line (width, deck palette, line color, walls, lighting)
-  to `fill`/`setblock` and streams it over RCON. Lines are saved as re-runnable
-  YAML. See the [railroad builder guide](https://rdlu.github.io/minecraft-tui/rail/).
+- **`[rail builder]`** — build always-powered surface/air **railroad lines**,
+  **stations** and **junctions** from where you stand: it reads your position +
+  facing, then compiles a parametric line (width, deck palette, line color,
+  walls, lighting) to `fill`/`setblock` and streams it over RCON. Switches are
+  command-block contraptions (lever diverts, a detector rail springs it back).
+  Lines are saved as re-runnable YAML. See the
+  [railroad builder guide](https://rdlu.github.io/minecraft-tui/rail/).
 - **`[settings]`** — RCON host / port / password, chunkbase platform tag, and
   follow-map interval/zoom, stored in `~/.config/mc-tui/rcon.conf` (`chmod 600`).
 

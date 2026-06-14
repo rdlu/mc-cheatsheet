@@ -283,6 +283,61 @@ function rail_build_station
     rail_action_menu $tmp $id
 end
 
+# place a single track switch one block ahead of the player. A length-1 segment
+# carries the anchor; the junction overlays it (its approach rail joins the line
+# behind you). The lever diverts the next cart down the branch; a detector rail
+# past the junction springs it back to the through line.
+function rail_build_junction
+    type -q uv; or begin
+        echo 'uv is required for the railroad compiler (mise install)'
+        pause
+        return
+    end
+    set -l who (pick_player player); or return
+    set -l pose (player_pose $who | string split ' ')
+    if test (count $pose) -lt 5
+        echo "couldn't read $who's position/facing — online?"
+        pause
+        return
+    end
+    set -l px $pose[2]
+    set -l py $pose[3]
+    set -l pz $pose[4]
+    set -l facing $pose[5]
+    echo "$who is at $px $py $pz, facing $facing"
+
+    set -l dirs $facing
+    for d in north south east west
+        test $d != $facing; and set -a dirs $d
+    end
+    set -l dir (rail_pick direction "travel direction (detected: $facing) — esc cancels" $dirs); or return
+    set -l kind (rail_pick 'junction kind' 't = straight + a side branch · y = two-way fork' t y); or return
+    set -l branch (rail_pick branch 'which side the branch peels off (lever diverts here)' right left); or return
+    set -l off (fzf_input 'height offset' 'blocks above your feet — 0 = at your level' 0 5 10 20)
+    test -n "$off"; or set off 0
+    set -l deck (rail_pick deck 'deck material (polished/brick) — or type any block' (rail_deck_palette)); or return
+    set -l name (fzf_input 'junction name' 'a label (used as the saved filename)' "$dir $kind switch")
+    test -n "$name"; or set name "$dir $kind switch"
+
+    set -l d (rail_delta $dir | string split ' ')
+    set -l sx (math "$px + $d[1]")
+    set -l sy (math "$py + $off")
+    set -l sz (math "$pz + $d[2]")
+    set -l id (string lower -- "$name" | string replace -ra '[^a-z0-9]+' '-' | string trim -c '-')
+    test -n "$id"; or set id switch
+
+    set -l tmp (mktemp /tmp/mc-tui-rail.XXXXXX.yml)
+    begin
+        echo "line: {id: $id}"
+        echo "defaults: {width: 1, deck: $deck, power_spacing: 9}"
+        echo 'segments:'
+        echo "  - {from: [$sx, $sy, $sz], dir: $dir, length: 1}"
+        echo 'junctions:'
+        echo "  - {at: start, kind: $kind, branch: $branch}"
+    end >$tmp
+    rail_action_menu $tmp $id
+end
+
 function rail_load_line
     type -q uv; or begin
         echo 'uv is required for the railroad compiler (mise install)'
@@ -308,6 +363,7 @@ function railroad_view
         set -l choice (printf '%s\n' \
                 'build a line' \
                 'place a station' \
+                'place a junction' \
                 'load a saved line' \
                 'materials / corner kit' \
                 back | \
@@ -315,8 +371,10 @@ function railroad_view
         switch "$choice"
             case 'build*'
                 rail_build_line
-            case 'place*'
+            case 'place a station' 'place a st*'
                 rail_build_station
+            case 'place a junction' 'place a j*'
+                rail_build_junction
             case 'load*'
                 rail_load_line
             case 'materials*'
