@@ -37,12 +37,12 @@ You get a **preview** of the commands, then **run over RCON**, **copy** them, or
 
 `build a line` asks **flat / up / down**. A ramp climbs or drops **one block per
 step** on ascending rails, with its own length presets **4 / 8 / 12 / 16 / 24 /
-32** (= blocks climbed). Climbing eats a cart's speed, so ramps are powered
-tighter than flat track — a booster every **4** steps, every **2** on the short
-4- and 8-length ramps ("more energy to climb"). The catch a hand-builder learns:
-on a slope the booster's `redstone_block` goes on the rail's **high side** (one
-step up-slope, at the rail's height), *not* directly below it — below does
-nothing to an ascending rail.
+32** (= blocks climbed). Climbing eats a cart's speed, so ramps are powered hard:
+**two powered rails in a row** every **4** steps (every **2** on the short 4/8
+ramps, which makes them fully powered) — "more energy to climb". The catch a
+hand-builder learns: on a slope the booster's `redstone_block` goes on the rail's
+**high side** (one step up-slope, at the rail's height), *not* directly below it
+— below does nothing to an ascending rail.
 
 Chain a ramp between flat segments to climb to a new level and keep going:
 
