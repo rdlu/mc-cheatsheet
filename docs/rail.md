@@ -48,7 +48,9 @@ conveyor. Two styles, placed every `light_spacing` (default 8 — ≤ 24 keeps t
 whole track spawn-proof):
 
 - **poles** — a lamp post just beyond the deck edge with a lantern on top
-- **edge** — lanterns sitting on the deck edge
+- **edge** — lanterns sitting on top of the deck edge
+- **sides of base** — lanterns hanging under the deck edge (full blocks like
+  sea lanterns sit flush on the flank)
 
 Pick any light block (lantern, sea lantern, glowstone, end rod…) and which
 side(s) to light.

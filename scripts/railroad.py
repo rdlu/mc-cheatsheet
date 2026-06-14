@@ -43,7 +43,7 @@ DEFAULTS = {
     "wall_height": 1,    # 1 or 2, only when walls is a block
     "power_spacing": 9,  # redstone_block under the rail every N blocks; see below
     "light": "none",     # none | <light block id> (e.g. lantern, sea_lantern)
-    "light_style": "pole",   # pole (lamp posts) | edge (lanterns on the deck edge)
+    "light_style": "pole",   # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
     "light_spacing": 8,  # blocks between lights; <=24 stops all mob spawns
     "light_side": "both",  # both | left | right
 }
@@ -162,11 +162,16 @@ def generate_segment(seg, color):
             return (sx + dx * i + px * o, y, sz + dz * i + pz * o)
 
         pole_off = width // 2 + 1                # just beyond the deck edge
+        hanging = light.split(":")[-1] in ("lantern", "soul_lantern")
         for i in range(0, length, lspace):
             for s in sides:
-                if style == "edge":              # lantern on the deck edge
+                if style == "edge":              # light sitting on the deck edge
                     cmds.append(setblock(*at(i, s, dy), deck))   # support nub
                     cmds.append(setblock(*at(i, s, ry), light))
+                elif style == "side":            # light on the flank of the base
+                    cmds.append(setblock(*at(i, s, dy), deck))   # anchor to hang from
+                    blk = f"{light}[hanging=true]" if hanging else light
+                    cmds.append(setblock(*at(i, s, dy - 1), blk))
                 else:                            # pole: 3-tall post + light on top
                     o = s * pole_off
                     cmds.append(fill(*at(i, o, dy), *at(i, o, dy + 2), deck))
@@ -337,8 +342,8 @@ def resolve(data, pose=None):
         m["power_spacing"] = _int(m["power_spacing"], "power_spacing", idx)
         if m["power_spacing"] < 1:
             raise RailError(f"segment {idx}: `power_spacing` must be >= 1")
-        if str(m["light_style"]).lower() not in ("pole", "edge"):
-            raise RailError(f"segment {idx}: `light_style` must be pole or edge")
+        if str(m["light_style"]).lower() not in ("pole", "edge", "side"):
+            raise RailError(f"segment {idx}: `light_style` must be pole, edge or side")
         if str(m["light_side"]).lower() not in ("both", "left", "right"):
             raise RailError(f"segment {idx}: `light_side` must be both/left/right")
         m["light_spacing"] = _int(m["light_spacing"], "light_spacing", idx)

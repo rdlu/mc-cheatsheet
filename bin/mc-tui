@@ -1508,12 +1508,20 @@ function rail_build_line
     or set color none
     set -l walls (rail_pick walls 'side barrier — none, or pick/type a block' (rail_wall_palette))
     or set walls none
-    set -l lstyle (rail_pick lighting 'track lighting (stops mob spawns) — esc/none = off' none poles edge)
-    or set lstyle none
+    set -l lchoice (rail_pick lighting 'track lighting (stops mob spawns) — esc/none = off' none 'poles' 'edge' 'sides of base')
+    or set lchoice none
     set -l light none
+    set -l lstyle pole
     set -l lspace 8
-    if test "$lstyle" != none
-        test "$lstyle" = edge; or set lstyle pole
+    if test "$lchoice" != none
+        switch "$lchoice"
+            case 'edge'
+                set lstyle edge
+            case 'sides*'
+                set lstyle side
+            case '*'
+                set lstyle pole
+        end
         set light (rail_pick 'light block' 'the light source — or type any block' (rail_light_palette))
         or set light lantern
         set lspace (fzf_input 'light spacing' 'blocks between lights — <=24 stops all spawns' 8 6 12 16)

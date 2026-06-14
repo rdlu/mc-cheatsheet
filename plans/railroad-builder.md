@@ -48,7 +48,7 @@ Everything below was discussed and agreed before implementation:
 | Deck width | prompt **1 or 3** per build |
 | Line color | **under-rail stripe** (center column); width-3 edges keep the stone palette |
 | Power | **always powered** — continuous `powered_rail` + `redstone_block` every `power_spacing` (default **9** = relay 8 + 1; see §3) |
-| Lighting | optional — a `light` block on **poles** (lamp posts) or the deck **edge**, every `light_spacing` (default 8); any block light stops mob spawns |
+| Lighting | optional — a `light` block on **poles** (lamp posts), the deck **edge**, or the base **side** (hanging under the edge), every `light_spacing` (default 8); any block light stops mob spawns |
 | Stations | **parametric** (generated commands, not binary structures); two designs: **simple halt** + **covered stop** |
 | Corners | built **by hand**; a give-kit supplies the materials |
 | Compiler | **Python via `uv`** — single geometry engine; fish is the UI + RCON |
@@ -173,7 +173,7 @@ defaults:                   # applied to every segment unless overridden
   wall_height: 1            # 1 or 2 (only when walls is a block)
   power_spacing: 9          # redstone_block every N rails — keep at 9 (see §3)
   light: lantern            # none | <light block>  (lantern, sea_lantern, glowstone…)
-  light_style: pole         # pole (lamp posts) | edge (lanterns on the deck edge)
+  light_style: pole         # pole (lamp posts) | edge (on the deck edge) | side (under the edge)
   light_spacing: 8          # blocks between lights — <=24 stops all mob spawns
   light_side: both          # both | left | right
 
@@ -210,7 +210,9 @@ stations:
 - `light`: `none`, or a light block id (`lantern`, `sea_lantern`, `glowstone`,
   `end_rod`, …). When set, lights are placed every `light_spacing`.
 - `light_style`: `pole` (a 3-tall post just beyond the deck edge with the light
-  on top — lamp posts) or `edge` (the light sitting on the deck edge).
+  on top — lamp posts), `edge` (the light sitting on top of the deck edge), or
+  `side` (the light on the flank of the base — lanterns hang under the edge,
+  full blocks like `sea_lantern` sit flush below it).
 - `light_spacing`: blocks between lights (default 8). Since any block light > 0
   stops hostile spawns, ≤ 24 keeps the whole track spawn-proof.
 - `light_side`: `both` / `left` / `right`.
@@ -234,7 +236,8 @@ block `D`, color `C`, walls — the generator emits, in order:
    perpendicular offset ±1, full length → the wall block
 6. **Lighting** (if `light` set), every `light_spacing` on the chosen side(s):
    `pole` = a 3-tall deck-block post just beyond the edge with the light on top;
-   `edge` = a support block + the light on the deck edge
+   `edge` = the light on top of the deck edge; `side` = the light under the deck
+   edge (lanterns get `hanging=true`)
 
 Each cuboid layer is a single `fill`. If a layer would exceed 32 768 blocks it's
 split into sequential chunks along the direction axis.
