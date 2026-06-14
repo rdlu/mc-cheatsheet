@@ -15,6 +15,7 @@ extra_javascript = ["javascripts/accents.js"]
 nav = [
   { "Home" = "index.md" },
   { "Command builder" = "builder.md" },
+  { "Railroad builder" = "rail.md" },
   { "Commands" = [
     { "Selectors & coordinates" = "commands/selectors.md" },
     { "Teleporting" = "commands/teleport.md" },

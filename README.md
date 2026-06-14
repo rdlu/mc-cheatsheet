@@ -54,6 +54,11 @@ interactive picker:
   online right now via `list`.
 - **`[map]`** — open the world on [chunkbase](https://www.chunkbase.com/apps/seed-map)
   from the live seed, centered on spawn, coordinates, or a player's position.
+- **`[rail builder]`** — build always-powered surface/air **railroad lines** and
+  **stations** from where you stand: it reads your position + facing, then
+  compiles a parametric line (width, deck palette, line color, walls, lighting)
+  to `fill`/`setblock` and streams it over RCON. Lines are saved as re-runnable
+  YAML. See the [railroad builder guide](https://rdlu.github.io/minecraft-tui/rail/).
 - **`[settings]`** — RCON host / port / password, chunkbase platform tag, and
   follow-map interval/zoom, stored in `~/.config/mc-tui/rcon.conf` (`chmod 600`).
 
@@ -80,6 +85,7 @@ between the overworld, nether, and end.
 | `mc-tui status [--raw]` | cached server reachability — `--raw` prints just `up`/`down`/`unconfigured` |
 | `mc-tui map [player]` | open the world on chunkbase |
 | `mc-tui follow [player] [secs]` | live follow map |
+| `mc-tui rail <compile\|run\|validate> <file.yml> [player]` | build a railroad line/station from YAML (see the [guide](https://rdlu.github.io/minecraft-tui/rail/)) |
 | `mc-tui session [tmux\|zellij]` | TUI + RCON console side by side |
 
 The command and item tables are plain pipe-delimited text — inspect them with
@@ -130,8 +136,10 @@ The docs site rebuilds and deploys to GitHub Pages on every push to `main`
 cheatsheet.typ          Typst source for the two-page PDF (Catppuccin themed)
 bin/mc-tui              the fish + fzf terminal app (RCON, pickers, maps)
 scripts/follow-map.py   chromium + CDP driver for the live follow map
+scripts/railroad.py     YAML -> Minecraft commands compiler for the rail builder
 scripts/builder-data.py generates the web builder's data from the mc-tui tables
 docs/                   Markdown sources for the site (commands, tips, server)
+plans/                  design/reference docs (not published to the site)
 zensical.toml           site config; mise.toml  tools + tasks
 ```
 
